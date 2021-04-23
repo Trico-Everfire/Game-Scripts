@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -718,19 +718,22 @@ class Collisions {
         let h = objCollision.rh;
         // if w = 0, check height
         if (objCollision.rw === 0) {
-            let pass = forceNever || -(!forceAlways && ((y + objCollision.rh) <=
-                (positionAfter.y + Datas.Systems.mountainCollisionHeight
-                    .getValue())));
+            // If not in the height, no test
+            if (positionAfter.y < y || positionAfter.y > y + h) {
+                return [false, null];
+            }
+            let pass = forceNever || -(!forceAlways && ((y + h) <= (positionAfter
+                .y + Datas.Systems.mountainCollisionHeight.getValue())));
             if (Mathf.isPointOnRectangle(point, x, x + Datas.Systems.SQUARE_SIZE, z, z + Datas.Systems.SQUARE_SIZE)) {
-                return pass ? [false, y + objCollision.rh] : [true, null];
+                return pass ? [false, (positionAfter.y - y - h) ===
+                        0 ? null : y + h] : [true, null];
             }
             else {
                 if (!pass) {
                     return [this.checkIntersectionSprite([x + (Datas.Systems
                                 .SQUARE_SIZE / 2), y + (Datas.Systems.SQUARE_SIZE / 2),
                             z + (Datas.Systems.SQUARE_SIZE / 2), Datas.Systems
-                                .SQUARE_SIZE, objCollision.rh, Datas.Systems.SQUARE_SIZE,
-                            0, 0, 0], true, object), null];
+                                .SQUARE_SIZE, h, Datas.Systems.SQUARE_SIZE, 0, 0, 0], true, object), null];
                 }
             }
         }
@@ -890,11 +893,10 @@ class Collisions {
      *  @returns {boolean}
      */
     static checkObjects(mapPortion, object) {
-        let datas = Scene.Map.current.getObjectsAtPortion(mapPortion
-            .portion);
+        let datas = Scene.Map.current.getObjectsAtPortion(mapPortion.portion);
         return this.checkObjectsList(mapPortion.objectsList, object) || this
-            .checkObjectsList(datas.min, object) || this
-            .checkObjectsList(datas.mout, object);
+            .checkObjectsList(datas.min, object) || this.checkObjectsList(datas
+            .mout, object);
     }
     /**
      *  Check collision with objects.
@@ -907,7 +909,7 @@ class Collisions {
         let obj;
         for (let i = 0, l = list.length; i < l; i++) {
             obj = list[i];
-            if (obj !== object && object.isInRect(obj)) {
+            if (obj !== object) {
                 if (object.checkCollisionObject(obj)) {
                     return true;
                 }

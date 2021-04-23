@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -35,8 +35,7 @@ class SaveGame extends SaveLoadGame {
      */
     async save() {
         Datas.Systems.soundConfirmation.playSound();
-        await Game.current.save(this.windowChoicesSlots
-            .currentSelectedIndex + 1);
+        await Game.current.save(this.windowChoicesSlots.currentSelectedIndex + 1);
         Manager.Stack.pop();
         this.loading = false;
     }

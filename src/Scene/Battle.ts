@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -9,7 +9,7 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 
-import { Battler, Camera, WindowBox, WindowChoices, Picture2D, Item, Game } from "../Core";
+import { Battler, Camera, WindowBox, WindowChoices, Picture2D, Item, Game, Animation } from "../Core";
 import { Graphic, System, Scene, Manager } from "..";
 import { Enum } from "../Common";
 import CharacterKind = Enum.CharacterKind;
@@ -44,6 +44,7 @@ class Battle extends Map {
     public static TIME_LINEAR_MUSIC_END = 500;
     public static TIME_LINEAR_MUSIC_START = 500;
     public static TIME_ACTION_ANIMATION = 2000;
+    public static TIME_ACTION_NO_ANIMATION = 400;
     public static CAMERA_TICK = 0.05;
     public static CAMERA_OFFSET = 3;
     public static START_CAMERA_DISTANCE = 10;
@@ -70,10 +71,11 @@ class Battle extends Map {
 
     // Battle steps
     public battleInitialize: Scene.BattleInitialize;
-    public battleSelection: Scene.BattleSelection; //Step 1
-    public battleAnimation: Scene.BattleAnimation; //Step 2
-    public battleEnemyAttack: Scene.BattleEnemyAttack; //Step 3
-    public battleVictory: Scene.BattleVictory; //Step 4
+    public battleStartTurn: Scene.BattleStartTurn;
+    public battleSelection: Scene.BattleSelection;
+    public battleAnimation: Scene.BattleAnimation;
+    public battleEnemyAttack: Scene.BattleEnemyAttack;
+    public battleVictory: Scene.BattleVictory;
 
     // Flags
     public troopID: number;
@@ -105,13 +107,13 @@ class Battle extends Map {
     public time: number;
     public timeEnemyAttack: number;
     public turn: number;
+    public currentSkill: System.Skill;
+    public informationText: string;
 
     //Animation
-    public userAnimation: System.Animation;
-    public targetAnimation: System.Animation;
+    public animationUser: Animation;
+    public animationTarget: Animation;
     public action: System.MonsterAction;
-    public userAnimationPicture: Picture2D;
-    public targetAnimationPicture: Picture2D;
 
     //Transition
     public transitionStart: MapTransitionKind;
@@ -134,8 +136,6 @@ class Battle extends Map {
 
     public mapCameraDistance: number;
     public actionDoNothing: System.MonsterAction;
-    public frameUser: number;
-    public frameTarget: number;
 
     //Camera
     public cameraStep: number;
@@ -167,6 +167,7 @@ class Battle extends Map {
     public xp: number;
     public battleMap: System.BattleMap;
     public currentEffectIndex: number;
+    public currentTargetIndex: number;
     public priorityIndex: number;
     public lootsNumber: number;
 
@@ -182,7 +183,8 @@ class Battle extends Map {
         super(battleMap.idMap, true);
 
         // Battle Handlers
-        this.battleInitialize = new Scene.BattleInitialize(this)
+        this.battleInitialize = new Scene.BattleInitialize(this);
+        this.battleStartTurn = new Scene.BattleStartTurn(this);
         this.battleSelection = new Scene.BattleSelection(this);
         this.battleAnimation = new Scene.BattleAnimation(this);
         this.battleEnemyAttack = new Scene.BattleEnemyAttack(this);
@@ -251,8 +253,14 @@ class Battle extends Map {
      *  @returns {boolean}
      */
     isDefined(kind: CharacterKind, index: number, target?: boolean): boolean {
-        return ((target || this.battlers[kind][index].active) && !this.battlers
-            [kind][index].player.isDead());
+        return (target || (this.battlers[kind][index].active && !this.battlers
+            [kind][index].player.isDead() && !this.battlers[kind][index]
+            .containsRestriction(Enum.StatusRestrictionsKind.CantDoAnything) &&
+            !this.battlers[kind][index].containsRestriction(Enum
+            .StatusRestrictionsKind.AttackRandomAlly) && !this.battlers[kind]
+            [index].containsRestriction(Enum.StatusRestrictionsKind
+            .AttackRandomEnemy) && !this.battlers[kind][index].containsRestriction(
+            Enum.StatusRestrictionsKind.AttackRandomTarget)));
     }
 
     /** 
@@ -331,6 +339,24 @@ class Battle extends Map {
     }
 
     /** 
+     *  Switch attacking group.
+     */
+    switchAttackingGroup() {
+        // Switching group
+        if (this.attackingGroup === Enum.CharacterKind.Hero) {
+            this.attackingGroup = Enum.CharacterKind.Monster;
+        } else {
+            this.turn++;
+            this.attackingGroup = Enum.CharacterKind.Hero;
+        }
+
+        // Updating status turn
+        for (let i = 0, l = this.battlers[this.attackingGroup].length; i < l; i++) {
+            this.battlers[this.attackingGroup][i].player.updateStatusTurn();
+        }
+    }
+
+    /** 
      *  Change the step of the battle.
      *  @param {BattleStep} i - Step of the battle
      */
@@ -347,6 +373,9 @@ class Battle extends Map {
         switch (this.step) {
             case BattleStep.Initialize:
                 this.battleInitialize.initialize();
+                break;
+            case BattleStep.StartTurn:
+                this.battleStartTurn.initialize();
                 break;
             case BattleStep.Selection:
                 this.battleSelection.initialize();
@@ -389,6 +418,9 @@ class Battle extends Map {
         switch (this.step) {
             case BattleStep.Initialize:
                 this.battleInitialize.update();
+                break;
+            case BattleStep.StartTurn:
+                this.battleStartTurn.update();
                 break;
             case BattleStep.Selection:
                 this.battleSelection.update();
@@ -474,6 +506,9 @@ class Battle extends Map {
             case BattleStep.Initialize:
                 this.battleInitialize.onKeyPressedStep(key);
                 break;
+            case BattleStep.StartTurn:
+                this.battleStartTurn.onKeyPressedStep(key);
+                break;
             case BattleStep.Selection:
                 this.battleSelection.onKeyPressedStep(key);
                 break;
@@ -498,6 +533,9 @@ class Battle extends Map {
         switch (this.step) {
             case BattleStep.Initialize:
                 this.battleInitialize.onKeyReleasedStep(key);
+                break;
+            case BattleStep.StartTurn:
+                this.battleStartTurn.onKeyReleasedStep(key);
                 break;
             case BattleStep.Selection:
                 this.battleSelection.onKeyReleasedStep(key);
@@ -525,6 +563,9 @@ class Battle extends Map {
             case BattleStep.Initialize:
                 res = res && this.battleInitialize.onKeyPressedRepeatStep(key);
                 break;
+            case BattleStep.StartTurn:
+                res = res && this.battleStartTurn.onKeyPressedRepeatStep(key);
+                break;
             case BattleStep.Selection:
                 res = res && this.battleSelection.onKeyPressedRepeatStep(key);
                 break;
@@ -551,6 +592,9 @@ class Battle extends Map {
         switch (this.step) {
             case BattleStep.Initialize:
                 res = res && this.battleInitialize.onKeyPressedAndRepeatStep(key);
+                break;
+            case BattleStep.StartTurn:
+                res = res && this.battleStartTurn.onKeyPressedAndRepeatStep(key);
                 break;
             case BattleStep.Selection:
                 res = res && this.battleSelection.onKeyPressedAndRepeatStep(key);
@@ -583,9 +627,22 @@ class Battle extends Map {
      *  Draw the battle HUD according to step.
      */
     drawHUD() {
+        // Draw all battlers special HUD
+        let i: number, l: number;
+        for (i = 0, l = this.battlers[Enum.CharacterKind.Hero].length; i < l; i++) {
+            this.battlers[Enum.CharacterKind.Hero][i].drawHUD();
+        }
+        for (i = 0, l = this.battlers[Enum.CharacterKind.Monster].length; i < l; i++) {
+            this.battlers[Enum.CharacterKind.Monster][i].drawHUD();
+        }
+
+        // Draw HUD according to step
         switch (this.step) {
             case BattleStep.Initialize:
                 this.battleInitialize.drawHUDStep();
+                break;
+            case BattleStep.StartTurn:
+                this.battleStartTurn.drawHUDStep();
                 break;
             case BattleStep.Selection:
                 this.battleSelection.drawHUDStep();

@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -668,10 +668,11 @@ var Enum;
     let BattleStep;
     (function (BattleStep) {
         BattleStep[BattleStep["Initialize"] = 0] = "Initialize";
-        BattleStep[BattleStep["Selection"] = 1] = "Selection";
-        BattleStep[BattleStep["Animation"] = 2] = "Animation";
-        BattleStep[BattleStep["EnemyAttack"] = 3] = "EnemyAttack";
-        BattleStep[BattleStep["Victory"] = 4] = "Victory";
+        BattleStep[BattleStep["StartTurn"] = 1] = "StartTurn";
+        BattleStep[BattleStep["Selection"] = 2] = "Selection";
+        BattleStep[BattleStep["Animation"] = 3] = "Animation";
+        BattleStep[BattleStep["EnemyAttack"] = 4] = "EnemyAttack";
+        BattleStep[BattleStep["Victory"] = 5] = "Victory";
     })(BattleStep = Enum.BattleStep || (Enum.BattleStep = {}));
     ;
     /**
@@ -685,5 +686,22 @@ var Enum;
         FadeType[FadeType["FadeIn"] = 0] = "FadeIn";
         FadeType[FadeType["FadeOut"] = 1] = "FadeOut";
     })(FadeType = Enum.FadeType || (Enum.FadeType = {}));
+    /**
+     * Enum for the status restrictions kind.
+     *
+     * @export
+     * @enum {number}
+     */
+    let StatusRestrictionsKind;
+    (function (StatusRestrictionsKind) {
+        StatusRestrictionsKind[StatusRestrictionsKind["None"] = 0] = "None";
+        StatusRestrictionsKind[StatusRestrictionsKind["CantDoAnything"] = 1] = "CantDoAnything";
+        StatusRestrictionsKind[StatusRestrictionsKind["CantUseSkills"] = 2] = "CantUseSkills";
+        StatusRestrictionsKind[StatusRestrictionsKind["CantUseItems"] = 3] = "CantUseItems";
+        StatusRestrictionsKind[StatusRestrictionsKind["CantEscape"] = 4] = "CantEscape";
+        StatusRestrictionsKind[StatusRestrictionsKind["AttackRandomTarget"] = 5] = "AttackRandomTarget";
+        StatusRestrictionsKind[StatusRestrictionsKind["AttackRandomAlly"] = 6] = "AttackRandomAlly";
+        StatusRestrictionsKind[StatusRestrictionsKind["AttackRandomEnemy"] = 7] = "AttackRandomEnemy";
+    })(StatusRestrictionsKind = Enum.StatusRestrictionsKind || (Enum.StatusRestrictionsKind = {}));
 })(Enum || (Enum = {}));
 export { Enum };

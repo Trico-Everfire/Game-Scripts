@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -184,19 +184,20 @@ class Plugins {
             if (classPrototype instanceof Function) {
                 if (overwrite) {
                     classObject.prototype[prototypeName] = function (...args) {
-                        TheAnyPrototype.call(this, ...args);
+                        return TheAnyPrototype.call(this, ...args);
                     };
                 }
                 else if (loadBefore) {
                     classObject.prototype[prototypeName] = function (...args) {
-                        classPrototype.call(this, ...args);
-                        TheAnyPrototype.call(this, ...args);
+                        let result = classPrototype.call(this, ...args);
+                        this.callResult = result;
+                        return TheAnyPrototype.call(this, ...args);
                     };
                 }
                 else {
                     classObject.prototype[prototypeName] = function (...args) {
                         TheAnyPrototype.call(this, ...args);
-                        classPrototype.call(this, ...args);
+                        return classPrototype.call(this, ...args);
                     };
                 }
             }
@@ -208,16 +209,22 @@ class Plugins {
             let classAnyObject = classObject; //force any type, system will not accept otherwise!
             let classMethod = classAnyObject[prototypeName];
             if (classMethod instanceof Function) {
-                if (loadBefore) {
+                if (overwrite) {
                     classAnyObject[prototypeName] = function (...args) {
-                        classMethod.call(this, ...args);
-                        TheAnyPrototype.call(this, ...args);
+                        return TheAnyPrototype.call(this, ...args);
+                    };
+                }
+                else if (loadBefore) {
+                    classAnyObject[prototypeName] = function (...args) {
+                        let result = classMethod.call(this, ...args);
+                        this.callResult = result;
+                        return TheAnyPrototype.call(this, ...args);
                     };
                 }
                 else {
                     classAnyObject[prototypeName] = function (...args) {
                         TheAnyPrototype.call(this, ...args);
-                        classMethod.call(this, ...args);
+                        return classMethod.call(this, ...args);
                     };
                 }
             }

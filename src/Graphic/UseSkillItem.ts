@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -130,7 +130,7 @@ class UseSkillItem extends Base {
     drawArrowAtIndex(index: number, x: number, y: number, h: number) {
         Datas.Systems.getCurrentWindowSkin().drawArrowTarget(this
             .graphicCharacters[index].battlerFrame.value, x + 32 + (index * 85), 
-            y + h - 20);
+            y + h - 20, true);
     }
 
     /** 

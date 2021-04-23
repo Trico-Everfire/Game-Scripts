@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -119,7 +119,7 @@ class Object3D extends SpecialElement {
     depth(): number {
         return this.depthSquare + (this.depthPixel > 0 ? 1 : 0);
     }
-
+    
     /** 
      *  Get the size vector.
      *  @returns {Vector3}

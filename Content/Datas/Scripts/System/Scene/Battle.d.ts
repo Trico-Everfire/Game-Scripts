@@ -1,4 +1,4 @@
-import { Battler, WindowBox, WindowChoices, Picture2D, Item } from "../Core/index.js";
+import { Battler, WindowBox, WindowChoices, Item, Animation } from "../Core/index.js";
 import { Graphic, System, Scene } from "../index.js";
 import { Enum } from "../Common/index.js";
 import CharacterKind = Enum.CharacterKind;
@@ -31,6 +31,7 @@ declare class Battle extends Map {
     static TIME_LINEAR_MUSIC_END: number;
     static TIME_LINEAR_MUSIC_START: number;
     static TIME_ACTION_ANIMATION: number;
+    static TIME_ACTION_NO_ANIMATION: number;
     static CAMERA_TICK: number;
     static CAMERA_OFFSET: number;
     static START_CAMERA_DISTANCE: number;
@@ -55,6 +56,7 @@ declare class Battle extends Map {
     static WINDOW_STATS_HEIGHT: number;
     static escapedLastBattle: boolean;
     battleInitialize: Scene.BattleInitialize;
+    battleStartTurn: Scene.BattleStartTurn;
     battleSelection: Scene.BattleSelection;
     battleAnimation: Scene.BattleAnimation;
     battleEnemyAttack: Scene.BattleEnemyAttack;
@@ -80,11 +82,11 @@ declare class Battle extends Map {
     time: number;
     timeEnemyAttack: number;
     turn: number;
-    userAnimation: System.Animation;
-    targetAnimation: System.Animation;
+    currentSkill: System.Skill;
+    informationText: string;
+    animationUser: Animation;
+    animationTarget: Animation;
     action: System.MonsterAction;
-    userAnimationPicture: Picture2D;
-    targetAnimationPicture: Picture2D;
     transitionStart: MapTransitionKind;
     transitionStartColor: System.Color;
     transitionEnd: MapTransitionKind;
@@ -102,8 +104,6 @@ declare class Battle extends Map {
     subStep: number;
     mapCameraDistance: number;
     actionDoNothing: System.MonsterAction;
-    frameUser: number;
-    frameTarget: number;
     cameraStep: number;
     cameraTick: number;
     cameraON: boolean;
@@ -128,6 +128,7 @@ declare class Battle extends Map {
     xp: number;
     battleMap: System.BattleMap;
     currentEffectIndex: number;
+    currentTargetIndex: number;
     priorityIndex: number;
     lootsNumber: number;
     attackSkill: System.Skill;
@@ -186,6 +187,10 @@ declare class Battle extends Map {
      *  Win the battle.
      */
     endBattle(): void;
+    /**
+     *  Switch attacking group.
+     */
+    switchAttackingGroup(): void;
     /**
      *  Change the step of the battle.
      *  @param {BattleStep} i - Step of the battle

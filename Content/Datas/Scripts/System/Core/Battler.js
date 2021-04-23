@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -9,15 +9,14 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 import { THREE } from "../Globals.js";
-import { Enum, Mathf } from "../Common/index.js";
+import { Enum, Mathf, ScreenResolution } from "../Common/index.js";
 import { Frame } from "./Frame.js";
-var BattlerStep = Enum.BattlerStep;
-var CharacterKind = Enum.CharacterKind;
-var ElementMapKind = Enum.ElementMapKind;
 import { ProgressionTable } from "../System/index.js";
 import { Manager, Datas, Scene } from "../index.js";
 import { Sprite } from "./Sprite.js";
 import { Vector3 } from "./Vector3.js";
+import { Status } from "./Status.js";
+import { Animation } from "./Animation.js";
 /** @class
  *  A battler in a battle (ally or ennemy).
  *  @param {Player} player - The character properties
@@ -27,6 +26,7 @@ import { Vector3 } from "./Vector3.js";
 class Battler {
     constructor(player, position, camera) {
         this.itemsNumbers = [];
+        this.currentStatusAnimation = null;
         this.player = player;
         if (!position) {
             return;
@@ -44,9 +44,10 @@ class Battler {
             .getThreeCamera());
         this.active = true;
         this.frame = new Frame(Mathf.random(250, 300));
-        this.frameAttacking = new Frame(350);
+        this.frameAttacking = new Frame(350, false);
         this.frameArrow = new Frame(125);
-        this.step = BattlerStep.Normal;
+        this.step = Enum.BattlerStep.Normal;
+        this.lastStep = Enum.BattlerStep.Normal;
         this.width = 1;
         this.height = 1;
         this.selected = false;
@@ -83,19 +84,36 @@ class Battler {
                 .SQUARE_SIZE / Datas.Systems.FRAMES);
             this.height = Math.floor(texture.image.height / Datas.Systems
                 .SQUARE_SIZE / Battler.STEPS);
-            let sprite = Sprite.create(ElementMapKind.SpritesFace, [0, 0, this
-                    .width, this.height]);
+            let sprite = Sprite.create(Enum.ElementMapKind.SpritesFace, [0, 0,
+                this.width, this.height]);
             let geometry = sprite.createGeometry(this.width, this.height, false, position)[0];
             this.mesh = new THREE.Mesh(geometry, material);
             this.mesh.position.set(this.position.x, this.position.y, this
                 .position.z);
             this.upPosition = new Vector3(this.position.x, this.position.y + (this.height * Datas.Systems.SQUARE_SIZE), this.position.z);
             this.halfPosition = new Vector3(this.position.x, this.position.y + (this.height * Datas.Systems.SQUARE_SIZE / 2), this.position.z);
-            if (player.kind === CharacterKind.Monster) {
+            if (player.kind === Enum.CharacterKind.Monster) {
                 this.mesh.scale.set(-1, 1, 1);
             }
             this.updateUVs();
         }
+        // Update status animation
+        this.updateAnimationStatus();
+    }
+    /**
+     *  Check at least one affected status contains the following restriction.
+     *  @param {Enum.StatusRestrictionsKind} restriction - The kind of restriction
+     *  @returns {boolean}
+     */
+    containsRestriction(restriction) {
+        let status;
+        for (let i = 0, l = this.player.status.length; i < l; i++) {
+            status = this.player.status[i];
+            if (status.system.restrictionKind === restriction) {
+                return true;
+            }
+        }
+        return false;
     }
     /**
      *  Set the selected state.
@@ -132,7 +150,7 @@ class Battler {
      */
     setAttacking() {
         this.frameAttacking.value = 0;
-        this.step = BattlerStep.Attack;
+        this.step = Enum.BattlerStep.Attack;
         this.updateUVs();
     }
     /**
@@ -140,9 +158,9 @@ class Battler {
      *  @returns {boolean}
      */
     isStepAttacking() {
-        return this.step === BattlerStep.Attack || this.step === BattlerStep
-            .Skill || this.step === BattlerStep.Item || this.step ===
-            BattlerStep.Escape;
+        return this.step === Enum.BattlerStep.Attack || this.step === Enum
+            .BattlerStep.Skill || this.step === Enum.BattlerStep.Item || this
+            .step === Enum.BattlerStep.Escape;
     }
     /**
      *  Check if the battler is attacking and the frames is currently run.
@@ -157,7 +175,7 @@ class Battler {
      */
     setUsingSkill() {
         this.frameAttacking.value = 0;
-        this.step = BattlerStep.Skill;
+        this.step = Enum.BattlerStep.Skill;
         this.updateUVs();
     }
     /**
@@ -165,7 +183,7 @@ class Battler {
      */
     setUsingItem() {
         this.frameAttacking.value = 0;
-        this.step = BattlerStep.Item;
+        this.step = Enum.BattlerStep.Item;
         this.updateUVs();
     }
     /**
@@ -173,7 +191,7 @@ class Battler {
      */
     setEscaping() {
         this.frameAttacking.value = 0;
-        this.step = BattlerStep.Escape;
+        this.step = Enum.BattlerStep.Escape;
         this.updateUVs();
     }
     /**
@@ -181,7 +199,7 @@ class Battler {
      */
     setVictory() {
         this.frame.value = 0;
-        this.step = BattlerStep.Victory;
+        this.step = Enum.BattlerStep.Victory;
         this.updateUVs();
     }
     /**
@@ -190,15 +208,23 @@ class Battler {
      *  @param {Player} user - The attack / skill / item user
      */
     updateDead(attacked, user) {
-        let step = BattlerStep.Normal;
+        let step = this.step;
         if (this.player.isDead()) {
-            step = BattlerStep.Dead;
+            this.addStatus(1);
+            step = this.step;
+            this.lastStep = step;
         }
-        else if (attacked) {
-            step = BattlerStep.Attacked;
+        else {
+            this.removeStatus(1);
+            if (attacked) {
+                step = Enum.BattlerStep.Attacked;
+            }
+            else {
+                step = this.step;
+                this.lastStep = step;
+            }
         }
-        if (this.step !== step && (user !== this.player || step === BattlerStep
-            .Dead)) {
+        if (this.step !== step && (user !== this.player)) {
             this.step = step;
             this.updateUVs();
         }
@@ -223,11 +249,11 @@ class Battler {
     updateSelected() {
         let newX = this.mesh.position.x;
         let progression;
-        if (this.player.kind === CharacterKind.Hero) {
+        if (this.player.kind === Enum.CharacterKind.Hero) {
             progression = this.selected ? this.progressionAllyFront : this
                 .progressionAllyBack;
         }
-        else if (this.player.kind === CharacterKind.Monster) {
+        else if (this.player.kind === Enum.CharacterKind.Monster) {
             progression = this.selected ? this.progressionEnemyFront : this
                 .progressionEnemyBack;
         }
@@ -262,6 +288,10 @@ class Battler {
         if (!this.attacking && this.frame.update()) {
             this.updateUVs();
         }
+        if (this.currentStatusAnimation) {
+            this.currentStatusAnimation.update();
+            Manager.Stack.requestPaintHUD = true;
+        }
     }
     /**
      *  Update the frame.
@@ -284,7 +314,7 @@ class Battler {
     updateAttacking() {
         if (this.isStepAttacking() && this.frameAttacking.update()) {
             if (this.frameAttacking.value === 0) {
-                this.step = BattlerStep.Normal;
+                this.step = this.lastStep;
             }
             this.updateUVs();
         }
@@ -303,6 +333,22 @@ class Battler {
      */
     updateArrowPosition(camera) {
         this.arrowPosition = Manager.GL.toScreenPosition(this.mesh.position, camera.getThreeCamera());
+    }
+    /**
+     *  Update current status animation.
+     *  @param {Core.Status} previousFirst - The previous status animation.
+     */
+    updateAnimationStatus(previousFirst = undefined) {
+        let status = this.player.status[0];
+        if (previousFirst != status) {
+            if (status) {
+                this.currentStatusAnimation = new Animation(status.system
+                    .animationID.getValue(), true);
+            }
+            else {
+                this.currentStatusAnimation = null;
+            }
+        }
     }
     /**
      *  Add the battler to scene.
@@ -324,23 +370,20 @@ class Battler {
      *  Update the UVs coordinates according to frame and orientation.
      */
     updateUVs() {
-        if (this.mesh !== null) {
+        if (this.mesh) {
             let texture = Manager.GL.getMaterialTexture(this
                 .mesh.material);
             let textureWidth = texture.image.width;
             let textureHeight = texture.image.height;
             let frame = 0;
             switch (this.step) {
-                case BattlerStep.Normal:
-                case BattlerStep.Victory:
-                case BattlerStep.Dead:
-                    frame = this.frame.value;
-                    break;
-                case BattlerStep.Attack:
-                case BattlerStep.Skill:
-                case BattlerStep.Item:
-                case BattlerStep.Escape:
+                case Enum.BattlerStep.Attack:
+                case Enum.BattlerStep.Skill:
+                case Enum.BattlerStep.Item:
                     frame = this.frameAttacking.value;
+                    break;
+                default:
+                    frame = this.frame.value;
                     break;
             }
             let w = this.width * Datas.Systems.SQUARE_SIZE / textureWidth;
@@ -362,6 +405,41 @@ class Battler {
         }
     }
     /**
+     *  Add a new status and check if already in.
+     *  @param {number} id - The status id to add
+     *  @returns {Core.Status}
+     */
+    addStatus(id) {
+        let status = this.player.addStatus(id);
+        this.updateStatusStep();
+        return status;
+    }
+    /**
+     *  Remove the status.
+     *  @param {number} id - The status id to remove
+     *  @returns {Core.Status}
+     */
+    removeStatus(id) {
+        let status = this.player.removeStatus(id);
+        this.updateStatusStep();
+        return status;
+    }
+    /**
+     *  Update status step (first priority status displayed).
+     */
+    updateStatusStep() {
+        // Update step if changed
+        let step = Enum.BattlerStep.Normal;
+        let s = this.player.status[0];
+        if (s) {
+            step = s.system.battlerPosition.getValue();
+        }
+        if (this.step !== step) {
+            this.step = step;
+            this.updateUVs();
+        }
+    }
+    /**
      *  Draw the arrow to select this battler.
      */
     drawArrow() {
@@ -374,6 +452,29 @@ class Battler {
     drawDamages() {
         Datas.Systems.getCurrentWindowSkin().drawDamages(this.damages, this
             .damagePosition.x, this.damagePosition.y, this.isDamagesCritical, this.isDamagesMiss, this.timeDamage / Battler.TOTAL_TIME_DAMAGE);
+    }
+    /**
+     *  Draw the status on top of the battler.
+     */
+    drawStatus() {
+        Status.drawList(this.player.getFirstStatus(), ScreenResolution
+            .getScreenXReverse(this.damagePosition.x), ScreenResolution
+            .getScreenYReverse(this.damagePosition.y), Enum.Align.Center);
+    }
+    /**
+     *  Draw the status animation
+     */
+    drawStatusAnimation() {
+        if (this.currentStatusAnimation) {
+            this.currentStatusAnimation.draw(this);
+        }
+    }
+    /**
+     *  Draw the HUD specific to battler.
+     */
+    drawHUD() {
+        this.drawStatusAnimation();
+        this.drawStatus();
     }
 }
 Battler.OFFSET_SELECTED = 10;

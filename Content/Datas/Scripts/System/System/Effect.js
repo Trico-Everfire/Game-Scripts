@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -115,10 +115,10 @@ class Effect extends Base {
         }
         let targets = Scene.Map.current.targets;
         let result = false;
+        let l = targets.length;
         switch (this.kind) {
             case EffectKind.Damages: {
-                let l = targets.length;
-                let damage, miss, crit, target, precision, random, variance, fixRes, percentRes, element, critical, stat, abbreviation, max, before, currencyID, battler;
+                let damage, miss, crit, target, precision, variance, fixRes, percentRes, element, critical, stat, abbreviation, max, before, currencyID, battler;
                 for (let i = 0; i < l; i++) {
                     damage = 0;
                     miss = false;
@@ -129,8 +129,7 @@ class Effect extends Base {
                         precision = Interpreter.evaluate(this
                             .damagePrecisionFormula.getValue(), { user: user,
                             target: target });
-                        random = Mathf.random(0, 100);
-                        if (precision < random) {
+                        if (!Mathf.randomPercentTest(precision)) {
                             damage = null;
                             miss = true;
                         }
@@ -155,8 +154,7 @@ class Effect extends Base {
                             critical = Interpreter.evaluate(this
                                 .damageCriticalFormula.getValue(), { user: user,
                                 target: target });
-                            random = Mathf.random(0, 100);
-                            if (random <= critical) {
+                            if (Mathf.randomPercentTest(critical)) {
                                 damage = Interpreter.evaluate(Interpreter
                                     .evaluate(Datas.BattleSystems.formulaCrit
                                     .getValue(), { user: user, target: target,
@@ -237,8 +235,40 @@ class Effect extends Base {
                 }
                 break;
             }
-            case EffectKind.Status:
+            case EffectKind.Status: {
+                let precision, miss, target, id, previousFirst;
+                for (let i = 0, l = targets.length; i < l; i++) {
+                    target = targets[i];
+                    precision = Interpreter.evaluate(this.statusPrecisionFormula
+                        .getValue(), { user: user, target: target.player });
+                    if (Mathf.randomPercentTest(precision)) {
+                        miss = false;
+                        id = this.statusID.getValue();
+                        previousFirst = target.player.status[0];
+                        // Add or remove status
+                        if (this.isAddStatus) {
+                            target.lastStatusHealed = null;
+                            target.lastStatus = target.addStatus(id);
+                        }
+                        else {
+                            target.lastStatusHealed = target.removeStatus(id);
+                            target.lastStatus = null;
+                        }
+                        // If first status changed, change animation
+                        target.updateAnimationStatus(previousFirst);
+                    }
+                    else {
+                        miss = true;
+                    }
+                    // For diplaying result in HUD
+                    if (Scene.Map.current.isBattleMap) {
+                        target.damages = null;
+                        target.isDamagesMiss = miss;
+                        target.isDamagesCritical = false;
+                    }
+                }
                 break;
+            }
             case EffectKind.AddRemoveSkill:
                 break;
             case EffectKind.PerformSkill:
@@ -248,8 +278,7 @@ class Effect extends Base {
                     .getCommonReaction(this.commonReaction.commonReactionID), null, null, this.commonReaction.parameters));
                 break;
             case EffectKind.SpecialActions:
-                Scene.Map.current.battleCommandKind = this
-                    .specialActionKind;
+                Scene.Map.current.battleCommandKind = this.specialActionKind;
                 break;
             case EffectKind.Script:
                 break;
@@ -321,9 +350,9 @@ class Effect extends Base {
                     ": " + (min === max ? min : min + " - " + max) + (options
                     .length > 0 ? " [" + options.join(" - ") + "]" : "");
             case EffectKind.Status:
-                return (this.isAddStatus ? "Add" : "Remove") + " " +
-                    " [precision: " + Interpreter.evaluate(this
-                    .statusPrecisionFormula.getValue(), { user: user, target: target }) + "%]";
+                return (this.isAddStatus ? "Add" : "Remove") + " " + Datas
+                    .Status.get(this.statusID.getValue()).name() + " [precision: " +
+                    Interpreter.evaluate(this.statusPrecisionFormula.getValue(), { user: user, target: target }) + "%]";
             case EffectKind.AddRemoveSkill:
                 return (this.isAddSkill ? "Add" : "Remove") + " skill " + Datas
                     .Skills.get(this.addSkillID.getValue()).name;

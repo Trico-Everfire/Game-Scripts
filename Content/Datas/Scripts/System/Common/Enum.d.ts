@@ -584,10 +584,11 @@ declare namespace Enum {
      */
     enum BattleStep {
         Initialize = 0,
-        Selection = 1,
-        Animation = 2,
-        EnemyAttack = 3,
-        Victory = 4
+        StartTurn = 1,
+        Selection = 2,
+        Animation = 3,
+        EnemyAttack = 4,
+        Victory = 5
     }
     /**
      * Enum for the screen transition.
@@ -598,6 +599,22 @@ declare namespace Enum {
     enum FadeType {
         FadeIn = 0,
         FadeOut = 1
+    }
+    /**
+     * Enum for the status restrictions kind.
+     *
+     * @export
+     * @enum {number}
+     */
+    enum StatusRestrictionsKind {
+        None = 0,
+        CantDoAnything = 1,
+        CantUseSkills = 2,
+        CantUseItems = 3,
+        CantEscape = 4,
+        AttackRandomTarget = 5,
+        AttackRandomAlly = 6,
+        AttackRandomEnemy = 7
     }
 }
 export { Enum };

@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -14,7 +14,7 @@ import { Portion } from "./Portion";
 import { MapObject } from "./MapObject";
 import { Position } from "./Position";
 import { System, Datas, Manager, Scene } from "../index";
-import { StructMapElementCollision } from "./MapElement";
+import { MapElement, StructMapElementCollision } from "./MapElement";
 import { Constants, Enum, Utils } from "../Common";
 import { Floor } from "./Floor";
 import { Autotiles } from "./Autotiles";

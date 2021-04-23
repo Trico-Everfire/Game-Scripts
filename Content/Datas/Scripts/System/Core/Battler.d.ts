@@ -1,12 +1,13 @@
 import { Player } from "./Player.js";
 import { Enum } from "../Common/index.js";
 import { Frame } from "./Frame.js";
-import BattlerStep = Enum.BattlerStep;
 import { ProgressionTable } from "../System/index.js";
 import { Camera } from "./Camera.js";
 import { Position } from "./Position.js";
 import { Vector3 } from "./Vector3.js";
 import { Vector2 } from "./Vector2.js";
+import { Status } from "./Status.js";
+import { Animation } from "./Animation.js";
 /** @class
  *  A battler in a battle (ally or ennemy).
  *  @param {Player} player - The character properties
@@ -29,7 +30,8 @@ declare class Battler {
     frame: Frame;
     frameAttacking: Frame;
     frameArrow: Frame;
-    step: BattlerStep;
+    step: Enum.BattlerStep;
+    lastStep: Enum.BattlerStep;
     width: number;
     height: number;
     selected: boolean;
@@ -54,7 +56,16 @@ declare class Battler {
     damages: number;
     isDamagesMiss: boolean;
     isDamagesCritical: boolean;
+    currentStatusAnimation: Animation;
+    lastStatus: Status;
+    lastStatusHealed: Status;
     constructor(player: Player, position?: Position, camera?: Camera);
+    /**
+     *  Check at least one affected status contains the following restriction.
+     *  @param {Enum.StatusRestrictionsKind} restriction - The kind of restriction
+     *  @returns {boolean}
+     */
+    containsRestriction(restriction: Enum.StatusRestrictionsKind): boolean;
     /**
      *  Set the selected state.
      *  @param {boolean} selected - Indicate if the battler is selected
@@ -134,6 +145,11 @@ declare class Battler {
      */
     updateArrowPosition(camera: Camera): void;
     /**
+     *  Update current status animation.
+     *  @param {Core.Status} previousFirst - The previous status animation.
+     */
+    updateAnimationStatus(previousFirst?: Status): void;
+    /**
      *  Add the battler to scene.
      */
     addToScene(): void;
@@ -146,6 +162,22 @@ declare class Battler {
      */
     updateUVs(): void;
     /**
+     *  Add a new status and check if already in.
+     *  @param {number} id - The status id to add
+     *  @returns {Core.Status}
+     */
+    addStatus(id: number): Status;
+    /**
+     *  Remove the status.
+     *  @param {number} id - The status id to remove
+     *  @returns {Core.Status}
+     */
+    removeStatus(id: number): Status;
+    /**
+     *  Update status step (first priority status displayed).
+     */
+    updateStatusStep(): void;
+    /**
      *  Draw the arrow to select this battler.
      */
     drawArrow(): void;
@@ -153,5 +185,17 @@ declare class Battler {
      *  Draw the damages on top of the battler.
      */
     drawDamages(): void;
+    /**
+     *  Draw the status on top of the battler.
+     */
+    drawStatus(): void;
+    /**
+     *  Draw the status animation
+     */
+    drawStatusAnimation(): void;
+    /**
+     *  Draw the HUD specific to battler.
+     */
+    drawHUD(): void;
 }
 export { Battler };

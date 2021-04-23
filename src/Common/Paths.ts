@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -47,6 +47,7 @@ class Paths {
     public static readonly FILE_SETTINGS = Paths.DATAS + "settings.json";
     public static readonly FILE_DLCS = Paths.DATAS + "dlcs.json";
     public static readonly FILE_ANIMATIONS = Paths.DATAS + "animations.json";
+    public static readonly FILE_STATUS = Paths.DATAS + "status.json";
     public static readonly FILE_SCRIPTS = Paths.DATAS + "scripts.json";
     public static readonly FILE_TREE_MAP = Paths.DATAS + "treeMap.json";
     public static readonly FILE_PLUGIN_CODE = "code.js";

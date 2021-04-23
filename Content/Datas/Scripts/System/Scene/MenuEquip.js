@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -68,7 +68,6 @@ class MenuEquip extends MenuBase {
         for (let i = 0; i < this.party().length; i++) {
             listHeroes[i] = new Graphic.PlayerDescription(this.party()[i]);
         }
-        console.log(listHeroes);
         const options = {
             orientation: OrientationWindow.Horizontal,
             nbItemMax: 4,

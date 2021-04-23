@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -634,6 +634,7 @@ namespace Enum {
      */
     export enum BattleStep {
         Initialize,
+        StartTurn,
         Selection,
         Animation,
         EnemyAttack,
@@ -649,6 +650,23 @@ namespace Enum {
     export enum FadeType {
         FadeIn,
         FadeOut
+    }
+
+    /**
+     * Enum for the status restrictions kind.
+     *
+     * @export
+     * @enum {number}
+     */
+    export enum StatusRestrictionsKind {
+        None,
+        CantDoAnything,
+        CantUseSkills,
+        CantUseItems,
+        CantEscape,
+        AttackRandomTarget,
+        AttackRandomAlly,
+        AttackRandomEnemy
     }
 }
 

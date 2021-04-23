@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -221,12 +221,18 @@ class Shape extends Base {
             } else {
                 let url = this.getPath();
                 this.geometry = await new Promise((resolve, reject) => {
-                    Shape.loader.load(url, function (text: string) {
-                        resolve(Shape.parse(text));
+                    Shape.loader.load(url, (text: string | ArrayBuffer) => {
+                        resolve(Shape.parse(<string>text));
                     },
                     () => {},
                     () => {
-                        Platform.showErrorMessage("Could not load " + url);
+                        let error = "Could not load " + url;
+                        if (Datas.Systems.ignoreAssetsLoadingErrors) {
+                            console.log(error);
+                            resolve({});
+                        } else {
+                            Platform.showErrorMessage(error);
+                        }
                     });
                 });
             }

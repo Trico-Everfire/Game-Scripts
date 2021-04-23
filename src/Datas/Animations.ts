@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -25,7 +25,7 @@ class Animations {
     }
 
     /** 
-     *  Read the JSON file associated to troops.
+     *  Read the JSON file associated to status.
      *  @static
      *  @async
      */

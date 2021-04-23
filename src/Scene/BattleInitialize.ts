@@ -1,6 +1,6 @@
 
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -51,6 +51,7 @@ class BattleInitialize {
         this.battle.graphicPlayers = new Array(2);
         this.battle.time = new Date().getTime();
         this.battle.turn = 1;
+        this.battle.attackingGroup = CharacterKind.Hero;
         this.initializeAlliesBattlers();
         this.initializeEnemiesBattlers();
         this.initializeInformation();
@@ -107,7 +108,7 @@ class BattleInitialize {
                 .heroBattle.position.z - Datas.Systems.SQUARE_SIZE + (i * Datas
                     .Systems.SQUARE_SIZE));
             player = new Player(CharacterKind.Monster, troopElement.id, Game
-                .current.charactersInstances++, []);
+                .current.charactersInstances++, [], []);
             player.instanciate(troopElement.level);
             battler = new Battler(player, Position.createFromVector3(position), 
                 this.battle.camera);
@@ -245,7 +246,7 @@ class BattleInitialize {
         } else if (this.battle.transitionStart === MapTransitionKind.Zoom) {
             this.updateTransitionStartZoom();
         } else {
-            this.battle.changeStep(1);
+            this.battle.changeStep(Enum.BattleStep.StartTurn);
         }
     }
 
@@ -276,7 +277,7 @@ class BattleInitialize {
             }
             return;
         }
-        this.battle.changeStep(BattleStep.Selection);
+        this.battle.changeStep(BattleStep.StartTurn);
     }
 
     /**
@@ -313,7 +314,7 @@ class BattleInitialize {
                 return;
             }
         }
-        this.battle.changeStep(BattleStep.Selection);
+        this.battle.changeStep(BattleStep.StartTurn);
     }
     
     /** 

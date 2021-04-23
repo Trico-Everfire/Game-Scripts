@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -9,12 +9,13 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 
-import { Enum, Interpreter, Utils, Platform } from "../Common";
+import { Enum, Interpreter, Utils, Platform, Mathf } from "../Common";
 import CharacterKind = Enum.CharacterKind;
-import { Datas, System, Graphic } from "../index";
+import { Datas, System, Graphic, Core, Scene } from "../index";
 import { Skill } from "./Skill";
 import { Item } from "./Item";
 import { Battler } from "./Battler";
+import { Status } from "./Status";
 
 /** @class
  *  A character in the team/hidden/reserve.
@@ -26,6 +27,8 @@ import { Battler } from "./Battler";
  */
 class Player {
     
+    public static MAX_STATUS_DISPLAY_TOP: number = 3;
+
     public id: number;
     public kind: CharacterKind;
     public instid: number;
@@ -34,6 +37,7 @@ class Player {
     public levelingUp: boolean;
     public sk: Skill[];
     public equip: Item[];
+    public status: Status[];
     public expList: number[];
     public testedLevelUp: boolean;
     public remainingXP: number;
@@ -45,7 +49,8 @@ class Player {
     public battler: Battler;
 
     constructor(kind?: CharacterKind, id?: number, instanceID?: number, skills?: 
-        Skill[], name?: string, json?: Record<string, any>)
+        Record<string, any>[], status?: Record<string, any>[], name?: string, 
+        json?: Record<string, any>)
     {
         if (!Utils.isUndefined(kind)) {
             this.kind = kind;
@@ -55,19 +60,25 @@ class Player {
             this.name = Utils.isUndefined(name) ? this.system.name : name;
 
             // Skills
-            let l = skills.length;
-            this.sk = new Array(l);
-            let i: number;
-            for (i = 0; i < l; i++) {
+            this.sk = [];
+            let i: number, l: number;
+            for (i = 0, l = skills.length; i < l; i++) {
                 this.sk[i] = new Skill(skills[i].id);
             }
 
             // Equip
             l = Datas.BattleSystems.maxEquipmentID;
             this.equip = new Array(l + 1);
-            for (i = 1; i <= l; i++)
-            {
+            for (i = 1, l = Datas.BattleSystems.maxEquipmentID; i <= l; i++) {
                 this.equip[i] = null;
+            }
+
+            // Status
+            this.status = [];
+            let element: Record<string, any>;
+            for (i = 0, l = status.length; i < l; i++) {
+                element = status[i];
+                this.status[i] = new Status(element.id, element.turn);
             }
 
             // Experience list
@@ -137,12 +148,23 @@ class Player {
      *  @returns {Record<string, any>}
      */
     getSaveCharacter(): Record<string, any> {
+        // Status
+        let statusList = [];
+        let i: number, l: number, status: Status;
+        for (i = 0, l = this.status.length; i < l; i++) {
+            status = this.status[i];
+            statusList[i] = {
+                id: status.system.id,
+                turn: status.turn
+            };
+        }
         return {
             kind: this.kind,
             id: this.id,
             name: this.name,
             instid: this.instid,
             sk: this.sk,
+            status: statusList,
             stats: this.getSaveStat(),
             equip: this.getSaveEquip()
         };
@@ -270,6 +292,8 @@ class Player {
             list[i] = null;
             bonus[i] = null;
         }
+
+        // Equipment
         let j: number, m: number, characteristics: System.Characteristic[], 
             characteristic: System.Characteristic, result: number[], statistic: 
             System.Statistic, base: number;
@@ -286,6 +310,31 @@ class Player {
                 characteristics = this.equip[j].getItemInformations()
                     .characteristics;
             }
+            if (characteristics) {
+                for (i = 0, l = characteristics.length; i < l; i++) {
+                    characteristic = characteristics[i];
+                    result = characteristic.getNewStatValue(this);
+                    if (result !== null) {
+                        if (list[result[0]] === null) {
+                            statistic = Datas.BattleSystems.getStatistic(result[
+                                0]);
+                            base = this[statistic.getAbbreviationNext()] - this[
+                                statistic.getBonusAbbreviation()];
+                            list[result[0]] = characteristic.operation ? 0 : 
+                                base;
+                            bonus[result[0]] = characteristic.operation ? -base 
+                                : 0;
+                        }
+                        list[result[0]] += result[1];
+                        bonus[result[0]] += result[1];
+                    }
+                }
+            }
+        }
+
+        // Status
+        for (j = 0, m = this.status.length; j < m; j++) {
+            characteristics = this.status[j].system.characteristics;
             if (characteristics) {
                 for (i = 0, l = characteristics.length; i < l; i++) {
                     characteristic = characteristics[i];
@@ -660,6 +709,149 @@ class Player {
     isExperienceUpdated(): boolean {
         return this.testedLevelUp && this.totalRemainingXP === 0 && this
             .remainingXP === 0;
+    }
+
+    /** 
+     *  Get the first status to display according to priority.
+     *  @returns {Core.Status[]}
+     */
+    getFirstStatus(): Status[] {
+        let statusList: Status[] = [];
+        let status: Status;
+        for (let i = 0; i < Player.MAX_STATUS_DISPLAY_TOP; i++) {
+            status = this.status[i];
+            if (status) {
+                statusList.push(status);
+            } else {
+                break;
+            }
+        }
+        return statusList;
+    }
+
+    /** 
+     *  Add a new status and check if already in.
+     *  @param {number} id - The status id to add
+     *  @returns {Core.Status}
+     */
+    addStatus(id: number): Status {
+        let status = new Status(id);
+        let priority = status.system.priority.getValue();
+        let i: number, s: Status, p: number;
+        for (i = this.status.length - 1; i >= 0; i--) {
+            s = this.status[i];
+            // If same id, don't add
+            if (s.system.id === id) {
+                return null;
+            }
+        }
+        for (i = this.status.length - 1; i >= 0; i--) {
+            // Add according to priority
+            p = s.system.priority.getValue();
+            if (s <= priority) {
+                break;
+            }
+        }
+        this.status.splice(i < 0 ? 0 : 0, 0, status);
+        this.updateAllStatsValues();
+        return status;
+    }
+
+    /** 
+     *  Remove the status.
+     *  @param {number} id - The status id to remove
+     *  @returns {Core.Status}
+     */
+    removeStatus(id: number): Status {
+        let i: number, s: Status;
+        for (i = this.status.length - 1; i >= 0; i--) {
+            s = this.status[i];
+            // If same id, remove
+            if (s.system.id === id) {
+                this.status.splice(i, 1);
+                this.updateAllStatsValues();
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /** 
+     *  Remove the status with release at end battle option.
+     */
+    removeEndBattleStatus() {
+        let test = false;
+        let s: Status;
+        for (let i = this.status.length - 1; i >= 0; i--) {
+            s = this.status[i];
+            if (s.system.isReleaseAtEndBattle) {
+                this.status.splice(i, 1);
+                test = true;
+            }
+        }
+        // If at least one removed, update stats
+        if (test) {
+            this.updateAllStatsValues();
+        }
+    }
+
+    /** 
+     *  Remove the status with release after attacked option.
+     */
+    removeAfterAttackedStatus() {
+        let test = false;
+        let s: Status;
+        for (let i = this.status.length - 1; i >= 0; i--) {
+            s = this.status[i];
+            if (s.system.isReleaseAfterAttacked && Mathf.randomPercentTest(s.system
+                .chanceReleaseAfterAttacked.getValue())) {
+                this.status.splice(i, 1);
+                test = true;
+            }
+        }
+        if (test) {
+            this.updateAllStatsValues();
+        }
+    }
+
+    /** 
+     *  Remove the status with release at start turn option.
+     */
+    removeStartTurnStatus(listStill: Status[]): Status[] {
+        let listHealed: Status[] = [];
+        let test = false;
+        let j: number, m: number, s: Status, release: System.StatusReleaseTurn;
+        for (let i = this.status.length - 1; i >= 0; i--) {
+            s = this.status[i];
+            if (s.system.isReleaseStartTurn) {
+                for (j = 0, m = s.system.releaseStartTurn.length; j < m; j++) {
+                    release = s.system.releaseStartTurn[j];
+                    if (Mathf.OPERATORS_COMPARE[release.operationTurnKind](s.turn, 
+                        release.turn.getValue()) && Mathf.randomPercentTest(
+                        release.chance.getValue())) {
+                        this.status.splice(i, 1);
+                        listHealed.push(s);
+                        test = true;
+                        break;
+                    } else {
+                        listStill.push(s);
+                    }
+                }
+            }
+        }
+        if (test) {
+            this.updateAllStatsValues();
+        }
+        return listHealed;
+    }
+
+    /** 
+     *  Update each status turn.
+     */
+    updateStatusTurn() {
+        for (let i = this.status.length - 1; i >= 0; i--) {
+            this.status[i].turn++;
+        }
     }
 }
 

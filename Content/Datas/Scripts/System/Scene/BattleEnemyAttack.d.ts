@@ -1,4 +1,5 @@
-import { Scene } from "../index.js";
+import { Scene, System } from "../index.js";
+import { Enum } from "../Common/index.js";
 declare class BattleEnemyAttack {
     battle: Scene.Battle;
     constructor(battle: Scene.Battle);
@@ -7,13 +8,17 @@ declare class BattleEnemyAttack {
      */
     initialize(): void;
     /**
+     *  Define the possible action to do.
+     */
+    definePossibleActions(actions: System.MonsterAction[], restriction: Enum.StatusRestrictionsKind): number;
+    /**
      *  Define the action to do.
      */
-    defineAction(): void;
+    defineAction(restriction?: Enum.StatusRestrictionsKind): void;
     /**
      *  Define the targets
      */
-    defineTargets(): void;
+    defineTargets(restriction?: Enum.StatusRestrictionsKind): void;
     /**
      *  Update the battle
      */

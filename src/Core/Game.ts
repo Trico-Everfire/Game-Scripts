@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -50,9 +50,8 @@ class Game {
 
     constructor(slot: number = -1) {
         this.slot = slot;
-        this.hero = new MapObject(Datas.Systems.modelHero.system, new THREE
-            .Vector3(Datas.Systems.modelHero.position.x, Datas.Systems.modelHero
-            .position.y, Datas.Systems.modelHero.position.z), true);
+        this.hero = new MapObject(Datas.Systems.modelHero.system, Datas.Systems
+            .modelHero.position.clone(), true);
         this.isEmpty = true;
     }
 
@@ -111,21 +110,21 @@ class Game {
         Utils.readJSONSystemList({ list: json.th, listIndexes: this.teamHeroes, 
             func: (json: Record<string, any>) => {
                 return new Player(json.kind, json.id, json.instid, json.sk, json
-                    .name, json);
+                    .status, json.name, json);
             }
         });
         this.reserveHeroes = [];
         Utils.readJSONSystemList({ list: json.sh, listIndexes: this
             .reserveHeroes, func: (json: Record<string, any>) => {
                 return new Player(json.kind, json.id, json.instid, json.sk, json
-                    .name, json);
+                    .status, json.name, json);
             }
         });
         this.hiddenHeroes = [];
         Utils.readJSONSystemList({ list: json.hh, listIndexes: this.hiddenHeroes
             , func: (json: Record<string, any>) => {
                 return new Player(json.kind, json.id, json.instid, json.sk, json
-                    .name, json);
+                    .status, json.name, json);
             }
         });
 
@@ -292,7 +291,7 @@ class Game {
         this.variables[stockID] = this.charactersInstances;
 
         // Adding the instanciated character in the right group
-        let player = new Player(type, id, this.charactersInstances++, []);
+        let player = new Player(type, id, this.charactersInstances++, [], []);
         player.instanciate(level);
         this.getTeam(groupKind).push(player);
     }

@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -16,8 +16,9 @@ import { Manager, Datas } from "../index.js";
  *  @param {number} [value=0] - The current frame value
  */
 class Frame {
-    constructor(duration, tick = 0, value = 0) {
+    constructor(duration, loop = true, tick = 0, value = 0) {
         this.duration = duration;
+        this.loop = loop;
         this.tick = tick;
         this.value = value;
     }
@@ -28,6 +29,9 @@ class Frame {
      *  @returns {boolean}
      */
     update(duration = this.duration) {
+        if (!this.loop && this.value === Datas.Systems.FRAMES - 1) {
+            return false;
+        }
         let frame = this.value;
         this.tick += Manager.Stack.elapsedTime;
         if (this.tick >= duration) {

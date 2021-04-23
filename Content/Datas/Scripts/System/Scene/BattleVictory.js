@@ -1,5 +1,5 @@
 /*
-    RPG Paper Maker Copyright (C) 2017-2020 Wano
+    RPG Paper Maker Copyright (C) 2017-2021 Wano
 
     RPG Paper Maker engine is under proprietary license.
     This source code is also copyrighted.
@@ -18,7 +18,6 @@ import { WindowBox, Item, Game } from "../Core/index.js";
 //
 //  CLASS BattleVictory
 //
-//  Step 4 : End of battle
 //      SubStep 0 : Victory message
 //      SubStep 1 : Experience update
 //      SubStep 2 : Level up
@@ -34,6 +33,15 @@ class BattleVictory {
      *  Initialize step.
      */
     initialize() {
+        // Remove status if release at end of battles
+        let i, l, battler, s;
+        for (i = 0, l = Game.current.teamHeroes.length; i < l; i++) {
+            battler = this.battle.battlers[CharacterKind.Hero][i];
+            s = battler.player.status[0];
+            battler.player.removeEndBattleStatus();
+            battler.updateStatusStep();
+            battler.updateAnimationStatus(s);
+        }
         // If loosing, directly go to end transition
         if (!this.battle.winning) {
             this.battle.windowTopInformations.content = new Graphic.Text("Defeat...", { align: Align.Center });
@@ -48,14 +56,12 @@ class BattleVictory {
         for (id in this.battle.currencies) {
             Game.current.currencies[id] += this.battle.currencies[id];
         }
-        let i, l;
         for (i = 0, l = this.battle.loots.length; i < l; i++) {
             for (id in this.battle.loots[i]) {
                 this.battle.loots[i][id].addItems();
             }
         }
         // Heroes
-        let battler;
         for (i = 0, l = Game.current.teamHeroes.length; i < l; i++) {
             battler = this.battle.battlers[CharacterKind.Hero][i];
             battler.setVictory();

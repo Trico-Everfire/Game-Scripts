@@ -7,7 +7,7 @@ declare class Animations {
     private static list;
     constructor();
     /**
-     *  Read the JSON file associated to troops.
+     *  Read the JSON file associated to status.
      *  @static
      *  @async
      */
