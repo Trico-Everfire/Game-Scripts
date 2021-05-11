@@ -9,8 +9,8 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 import { Base } from "./Base.js";
-import { Graphic } from "../index.js";
-import { Utils, Enum } from "../Common/index.js";
+import { System, Graphic, Datas } from "../index.js";
+import { Utils, Enum, Constants, Mathf } from "../Common/index.js";
 var Align = Enum.Align;
 /** @class
  *  The graphic displaying all the items information in the inventory menu.
@@ -18,16 +18,39 @@ var Align = Enum.Align;
  *  @param {number} nbItem - The number of occurence of the selected item
  */
 class Item extends Base {
-    constructor(item, nbItem) {
+    constructor(item, { nbItem, possible = true, showSellPrice = false } = {}) {
         super();
         this.item = item;
-        this.system = item.getItemInformations();
         // All the graphics
-        this.graphicName = new Graphic.TextIcon(this.system.name(), this.system
-            .pictureID);
-        this.graphicNb = new Graphic.Text("x" + (Utils.isUndefined(nbItem) ?
-            item.nb : nbItem), { align: Align.Right });
-        this.graphicInformations = new Graphic.SkillItem(this.system);
+        nbItem = Utils.isUndefined(nbItem) ? item.nb : nbItem;
+        this.graphicName = new Graphic.TextIcon("", this.item.system.pictureID, {}, possible ? {} : { color: System.Color.GREY });
+        this.updateName(nbItem);
+        if (Utils.isUndefined(item.shop)) {
+            this.graphicNb = new Graphic.Text("x" + nbItem, { align: Align.Right });
+        }
+        this.graphicInformations = new Graphic.SkillItem(this.item.system);
+        this.graphicCurrencies = [];
+        if (!Utils.isUndefined(item.shop) || showSellPrice) {
+            let price = showSellPrice ? item.system.getPrice() : item.shop.getPrice();
+            this.graphicCurrencies = [];
+            let graphic;
+            for (let id in price) {
+                graphic = new Graphic.TextIcon(Mathf.numberWithCommas(showSellPrice ?
+                    Math.round(Datas.Systems.priceSoldItem.getValue() * price[id]
+                        / 100) : price[id]), Datas.Systems.getCurrency(parseInt(id))
+                    .pictureID, { align: Align.Right }, possible ? {} : { color: System.Color.GREY });
+                this.graphicCurrencies.push(graphic);
+            }
+        }
+    }
+    /**
+     *  Update the item name (+ item number if shop).
+     *  @param {number} [nbItem=undefined]
+     */
+    updateName(nbItem) {
+        nbItem = Utils.isUndefined(nbItem) ? this.item.nb : nbItem;
+        this.graphicName.setText(this.item.system.name() + (!Utils.isUndefined(this.item.shop) && nbItem !== -1 ? Constants.STRING_SPACE + Constants
+            .STRING_BRACKET_LEFT + nbItem + Constants.STRING_BRACKET_RIGHT : ""));
     }
     /**
      *  Update the game item number.
@@ -44,7 +67,16 @@ class Item extends Base {
      */
     drawChoice(x, y, w, h) {
         this.graphicName.draw(x, y, w, h);
-        this.graphicNb.draw(x, y, w, h);
+        let offset = 0;
+        let graphic;
+        for (let i = this.graphicCurrencies.length - 1; i >= 0; i--) {
+            graphic = this.graphicCurrencies[i];
+            graphic.draw(x - offset, y, w, h);
+            offset += graphic.getWidth() + Constants.MEDIUM_SPACE;
+        }
+        if (this.graphicNb) {
+            this.graphicNb.draw(x - offset, y, w, h);
+        }
     }
     /**
      *  Drawing the item description.
@@ -55,7 +87,6 @@ class Item extends Base {
      */
     draw(x, y, w, h) {
         this.graphicInformations.draw(x, y, w, h);
-        this.graphicNb.draw(x, y, w, 0);
     }
 }
 export { Item };

@@ -10,11 +10,19 @@ declare class MenuSkills extends Base {
     windowTop: WindowBox;
     windowChoicesTabs: WindowChoices;
     windowChoicesList: WindowChoices;
-    windowInformations: WindowBox;
+    windowBoxInformation: WindowBox;
     windowEmpty: WindowBox;
     windowBoxUseSkill: WindowBox;
     substep: number;
     constructor();
+    /**
+     *  Create the choice list.
+     */
+    createWindowChoicesList(): void;
+    /**
+     *  Create the information window.
+     */
+    createWindowBoxInformation(): void;
     /**
      *  Synchronize informations with selected hero.
      */
@@ -55,7 +63,7 @@ declare class MenuSkills extends Base {
      */
     onKeyPressedAndRepeat(key: number): boolean;
     /**
-     *  Draw the HUD scene
+     *  Draw the HUD scene.
      */
     drawHUD(): void;
 }

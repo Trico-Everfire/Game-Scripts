@@ -32,6 +32,7 @@ class ChangeAStatistic extends Base {
     public vFormula: System.DynamicValue;
     public vMax: boolean;
     public canAboveMax: boolean;
+    public isApplyToMax: boolean;
 
     constructor(command: any[]) {
         super();
@@ -75,6 +76,7 @@ class ChangeAStatistic extends Base {
 
         // Option
         this.canAboveMax = !Utils.numToBool(command[iterator.i++]);
+        this.isApplyToMax = Utils.numToBool(command[iterator.i++]);
     }
 
     /** 
@@ -87,8 +89,11 @@ class ChangeAStatistic extends Base {
     update(currentState: Record<string, any>, object: MapObject, state: number): 
         number
     {
-        let stat = Datas.BattleSystems.getStatistic(this.statisticID.getValue());
-        let abr = stat.abbreviation;
+        let statisticID = this.statisticID.getValue();
+        let stat = Datas.BattleSystems.getStatistic(statisticID);
+        let isChangingExperience = Datas.BattleSystems.idExpStatistic === statisticID;
+        let isChangingLevel = Datas.BattleSystems.idLevelStatistic === statisticID;
+        let abr = this.isApplyToMax ? stat.getMaxAbbreviation() : stat.abbreviation;
         let targets: Player[];
         switch (this.selection) {
             case 0:
@@ -99,9 +104,10 @@ class ChangeAStatistic extends Base {
                 targets = Game.current.getTeam(this.groupIndex);
                 break;
         }
-        let target: Player;
+        let target: Player, before: number, after: number;
         for (let i = 0, l = targets.length; i < l; i++) {
             target = targets[i];
+            before = target[abr];
             switch (this.value) {
                 case 0:
                     target[abr] = Mathf.OPERATORS_NUMBERS[this.operation](target
@@ -121,6 +127,25 @@ class ChangeAStatistic extends Base {
                 target[abr] = Math.max(target[stat.getMaxAbbreviation()], target
                     [abr]);
             }
+            after = target[abr];
+            if (isChangingLevel || isChangingExperience || stat.isFix || this
+                .isApplyToMax) {
+                if (isChangingLevel) {
+                    target[abr] = before;
+                    while (target.getCurrentLevel() < after) {
+                        target.levelUp();
+                    }
+                    target.synchronizeExperience();
+                } else {
+                    target[stat.getAddedAbbreviation()] += after - before;
+                }
+                if (isChangingExperience) {
+                    target.synchronizeLevel();
+                }
+            }
+
+            // Recalculate stats
+            target.updateAllStatsValues();
         }
         return 1;
     }

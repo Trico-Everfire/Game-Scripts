@@ -51,8 +51,8 @@ abstract class MenuBase extends Base {
      */
     protected _activeHero: number;
 
-    constructor() {
-        super(false);
+    constructor(...args: any[]) {
+        super(false, ...args);
     }
 
     /**
@@ -122,7 +122,7 @@ abstract class MenuBase extends Base {
     partyGraphics(): Graphic.Player[] {
         let array: Graphic.Player[] = [];
         for (let i = 0; i < this.party().length; i++) {
-            array[i] = new Graphic.Player(this.party()[i]);
+            array[i] = new Graphic.Player(this.party()[i], { isMainMenu: true });
         }
         return array;
     }

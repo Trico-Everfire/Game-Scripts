@@ -8,6 +8,7 @@
     See RPG Paper Maker EULA here:
         http://rpg-paper-maker.com/index.php/eula.
 */
+import { Datas } from "../index.js";
 import { IO, Paths, Utils, Enum } from "../Common/index.js";
 var TitleSettingKind = Enum.TitleSettingKind;
 /** @class
@@ -30,6 +31,7 @@ class Settings {
         for (let id in jsonObjs) {
             this.kb[id] = jsonObjs[id];
         }
+        this.currentLanguage = Utils.defaultValue(json[Utils.numToString(TitleSettingKind.Language)], Datas.Languages.getMainLanguageID());
     }
     /**
      *  Write the settings file.
@@ -42,14 +44,15 @@ class Settings {
             jsonObjs[id] = this.kb[id];
         }
         json[Utils.numToString(TitleSettingKind.KeyboardAssigment)] = jsonObjs;
+        json[Utils.numToString(TitleSettingKind.Language)] = this.currentLanguage;
         IO.saveFile(Paths.FILE_SETTINGS, json);
     }
     /**
      *  Check if the app is in dev mode
      *  @static
      */
-    static async checkIsDevMode() {
-        this.isDevMode = await (IO.fileExists(Paths.FILE_TREE_MAP));
+    static async checkIsProtected() {
+        this.isProtected = await (IO.fileExists(Paths.FILE_PROTECT));
     }
     /**
      *  Update Keyboard settings.
@@ -59,6 +62,14 @@ class Settings {
      */
     static updateKeyboard(id, sc) {
         this.kb[id] = sc;
+        this.write();
+    }
+    /**
+     *  Update current language setting.
+     *  @param {number} id
+     */
+    static updateCurrentLanguage(id) {
+        this.currentLanguage = id;
         this.write();
     }
 }

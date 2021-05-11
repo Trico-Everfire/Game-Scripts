@@ -8,7 +8,7 @@
     See RPG Paper Maker EULA here:
         http://rpg-paper-maker.com/index.php/eula.
 */
-import { Utils } from "../Common/index.js";
+import { Datas } from "../index.js";
 import { Base } from "./Base.js";
 /** @class
  *  A name that can have several translations.
@@ -32,14 +32,14 @@ class Translatable extends Base {
      *  sevaral langs
      */
     read(json) {
-        this.names = Utils.defaultValue(json.names, ["", json[1]]);
+        this.names = json.names;
     }
     /**
      *  Get the name according to current lang.
      *  @returns {string}
      */
     name() {
-        return this.names[1];
+        return this.names[Datas.Settings.currentLanguage] || "";
     }
     /**
      *  Update lang according to a command list and iterator.
@@ -50,7 +50,4 @@ class Translatable extends Base {
         this.names[id] = name;
     }
 }
-Translatable.EMPTY_NAMES = {
-    names: ["", ""]
-};
 export { Translatable };

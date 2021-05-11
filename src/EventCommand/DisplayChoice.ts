@@ -24,9 +24,12 @@ import { ShowText } from "./ShowText";
 class DisplayChoice extends Base {
 
     public cancelAutoIndex: System.DynamicValue;
+    public maxNumberChoices: System.DynamicValue;
     public choices: string[];
     public windowChoices: WindowChoices;
     public showText: ShowText;
+    public graphics: Graphic.Text[];
+    public maxWidth: number;
 
     constructor(command: any[]) {
         super();
@@ -36,42 +39,41 @@ class DisplayChoice extends Base {
         };
         this.cancelAutoIndex = System.DynamicValue.createValueCommand(command, 
             iterator);
+        this.maxNumberChoices = System.DynamicValue.createValueCommand(command, 
+            iterator);
         this.choices = [];
         let l = command.length;
         let lang = null;
         let next: string;
         while (iterator.i < l) {
             next = command[iterator.i];
-            iterator.i++;
-            if (next !== Constants.STRING_DASH) {
+            if (next === Constants.STRING_DASH) {
+                iterator.i++;
+                if (lang !== null) {
+                    this.choices.push(lang.name());
+                }
                 lang = new System.Translatable();
+            } else {
                 lang.getCommand(command, iterator);
-                this.choices.push(lang.name());
             }
+        }
+        if (lang !== null) {
+            this.choices.push(lang.name());
         }
 
         // Determine slots width
         l = this.choices.length;
-        let graphics = new Array(l);
-        let w = WindowBox.MEDIUM_SLOT_WIDTH;
+        this.graphics = new Array(l);
+        this.maxWidth = WindowBox.MEDIUM_SLOT_WIDTH;
         let graphic: Graphic.Text;
         for (let i = 0; i < l; i++) {
             graphic = new Graphic.Text(this.choices[i], { align: Align.Center });
-            graphics[i] = graphic;
-            if (graphic.textWidth > w) {
-                w = graphic.textWidth;
+            this.graphics[i] = graphic;
+            if (graphic.textWidth > this.maxWidth) {
+                this.maxWidth = graphic.textWidth;
             }
         }
-        w += WindowBox.SMALL_SLOT_PADDING[0] + WindowBox.SMALL_SLOT_PADDING[2];
-
-        // Window
-        this.windowChoices = new WindowChoices((ScreenResolution.SCREEN_X - w) / 
-            2, ScreenResolution.SCREEN_Y - 10 - 150 - (l * WindowBox
-            .MEDIUM_SLOT_HEIGHT), w, WindowBox.MEDIUM_SLOT_HEIGHT, graphics, 
-            {
-                nbItemsMax: l
-            }
-        );
+        this.maxWidth += WindowBox.SMALL_SLOT_PADDING[0] + WindowBox.SMALL_SLOT_PADDING[2];
     }
 
     /** 
@@ -80,12 +82,6 @@ class DisplayChoice extends Base {
      */
     setShowText(showText: ShowText) {
         this.showText = showText;
-
-        // Move to right if show text before
-        if (showText) {
-            this.windowChoices.setX(ScreenResolution.SCREEN_X - this
-                .windowChoices.oW - 10);
-        }
     }
 
     /** 
@@ -93,8 +89,20 @@ class DisplayChoice extends Base {
      *  @returns {Record<string, any>} The current state
      */
     initialize(): Record<string, any> {
-        this.windowChoices.unselect();
-        this.windowChoices.select(0);
+        let maxItems = this.maxNumberChoices.getValue();
+        this.windowChoices = new WindowChoices((ScreenResolution.SCREEN_X - this
+            .maxWidth) / 2, ScreenResolution.SCREEN_Y - 10 - 150 - (this.choices
+            .length * WindowBox.MEDIUM_SLOT_HEIGHT), this.maxWidth, WindowBox
+            .MEDIUM_SLOT_HEIGHT, this.graphics, 
+            {
+                nbItemsMax: maxItems
+            }
+        );
+        // Move to right if show text before
+        if (this.showText) {
+            this.windowChoices.setX(ScreenResolution.SCREEN_X - this
+                .windowChoices.oW - 10);
+        }
         return {
             index: -1
         };
@@ -129,10 +137,12 @@ class DisplayChoice extends Base {
      */
     onKeyPressed(currentState: Record<string, any>, key: number) {
         if (Datas.Keyboards.isKeyEqual(key, Datas.Keyboards.menuControls.Action)) {
+            Datas.Systems.soundConfirmation.playSound();
             currentState.index = this.windowChoices.currentSelectedIndex;
         } else if (Datas.Keyboards.isKeyEqual(key, Datas.Keyboards.menuControls
             .Cancel))
         {
+            Datas.Systems.soundCancel.playSound();
             currentState.index = this.cancelAutoIndex.getValue() - 1;
         }
     }

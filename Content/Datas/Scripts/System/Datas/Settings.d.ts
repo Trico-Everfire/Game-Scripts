@@ -4,7 +4,8 @@
  */
 declare class Settings {
     static kb: number[][][];
-    static isDevMode: boolean;
+    static currentLanguage: number;
+    static isProtected: boolean;
     constructor();
     /**
      *  Read the settings file.
@@ -20,7 +21,7 @@ declare class Settings {
      *  Check if the app is in dev mode
      *  @static
      */
-    static checkIsDevMode(): Promise<void>;
+    static checkIsProtected(): Promise<void>;
     /**
      *  Update Keyboard settings.
      *  @param {number} id
@@ -28,5 +29,10 @@ declare class Settings {
      *  @static
      */
     static updateKeyboard(id: number, sc: number[][]): void;
+    /**
+     *  Update current language setting.
+     *  @param {number} id
+     */
+    static updateCurrentLanguage(id: number): void;
 }
 export { Settings };

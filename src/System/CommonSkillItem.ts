@@ -9,7 +9,7 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 
-import { Enum, Utils } from "../Common";
+import { Enum, Interpreter, Utils } from "../Common";
 import TargetKind = Enum.TargetKind;
 import AvailableKind = Enum.AvailableKind;
 import SongKind = Enum.SongKind;
@@ -21,6 +21,7 @@ import { Cost } from "./Cost";
 import { Characteristic } from "./Characteristic";
 import { Effect } from "./Effect";
 import { System } from "../index";
+import { Player } from "../Core";
 
 /** @class
  *  A common class for skills, items, weapons, armors.
@@ -29,6 +30,7 @@ import { System } from "../index";
  */
 class CommonSkillItem extends Icon {
 
+    public id: number;
     public hasType: boolean;
     public hasTargetKind: boolean;
     public type: number;
@@ -42,7 +44,8 @@ class CommonSkillItem extends Icon {
     public sound: PlaySong;
     public animationID: DynamicValue;
     public animationTargetID: DynamicValue;
-    public price: DynamicValue;
+    public canBeSold: System.DynamicValue;
+    public price: Cost[];
     public costs: Cost[];
     public effects: Effect[];
     public characteristics: Characteristic[];
@@ -58,12 +61,11 @@ class CommonSkillItem extends Icon {
      */
     read(json: Record<string, any>) {
         super.read(json);
-
+        this.id = json.id;
         this.type = Utils.defaultValue(json.t, 1);
         this.consumable = Utils.defaultValue(json.con, false);
         this.oneHand = Utils.defaultValue(json.oh, true);
-        this.description = new Translatable(Utils.defaultValue(json.d, 
-            Translatable.EMPTY_NAMES));
+        this.description = new Translatable(json.d);
         this.targetKind = Utils.defaultValue(json.tk, TargetKind.None);
         this.targetConditionFormula = DynamicValue.readOrNone(json.tcf);
         this.conditionFormula = DynamicValue.readOrNone(json.cf);
@@ -71,7 +73,10 @@ class CommonSkillItem extends Icon {
         this.sound = new PlaySong(SongKind.Sound, json.s);
         this.animationUserID = DynamicValue.readOrNone(json.auid);
         this.animationTargetID = DynamicValue.readOrNone(json.atid);
-        this.price = DynamicValue.readOrDefaultNumber(json.p);
+        this.canBeSold = DynamicValue.readOrDefaultSwitch(json.canBeSold);
+        this.price = [];
+        Utils.readJSONSystemList({ list: Utils.defaultValue(json.p, []), 
+            listIndexes: this.price, cons: Cost });
         this.costs = [];
         Utils.readJSONSystemList({ list: Utils.defaultValue(json.cos, []), 
             listIndexes: this.costs, cons: Cost });
@@ -162,6 +167,46 @@ class CommonSkillItem extends Icon {
      */
     getType(): System.WeaponArmorKind {
         return null;
+    }
+
+    /** 
+     *  Get the price.
+     *  @returns {number}
+     */
+    getPrice(): Record<string, number> {
+        return System.Cost.getPrice(this.price);
+    }
+
+    /** 
+     *  Get the item kind.
+     *  @returns {Enum.ItemKind}
+     */
+    getKind(): Enum.ItemKind {
+        return null;
+    }
+
+    /** 
+     *  Check if is weapon.
+     *  @returns {boolean}
+     */
+    isWeapon(): boolean {
+        return this.getKind() === Enum.ItemKind.Weapon;
+    }
+
+    /** 
+     *  Check if is armor.
+     *  @returns {boolean}
+     */
+    isArmor(): boolean {
+        return this.getKind() === Enum.ItemKind.Armor;
+    }
+
+    /** 
+     *  Check if is weapon or armor.
+     *  @returns {boolean}
+     */
+    isWeaponArmor(): boolean {
+        return this.isWeapon() || this.isArmor();
     }
 }
 

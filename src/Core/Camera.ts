@@ -23,19 +23,28 @@ import { Vector3 } from "./index";
  */
 class Camera {
     
+    public system: System.CameraProperties;
     public perspectiveCamera: THREE.PerspectiveCamera;
     public orthographicCamera:  THREE.OrthographicCamera;
     public isPerspective: boolean;
     public target: MapObject;
     public targetPosition: Vector3;
-    public targetOffset:   Vector3;
+    public targetOffset: Vector3;
     public distance: number;
     public horizontalAngle: number;
     public verticalAngle: number;
 
     constructor(cameraProperties: System.CameraProperties, target: MapObject) {
-        cameraProperties.initializeCamera(this);
+        this.system = cameraProperties;
+        this.initialize();
         this.target = target;
+    }
+
+    /** 
+     *  Initialize the camera according to system camera properties.
+     */
+    initialize() {
+        this.system.initializeCamera(this);
     }
 
     /** 

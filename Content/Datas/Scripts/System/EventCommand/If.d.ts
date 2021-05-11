@@ -1,6 +1,7 @@
 import { Base } from "./Base.js";
 import { System } from "../index.js";
-import { Player, MapObject } from "../Core/index.js";
+import { Enum } from "../Common/index.js";
+import { MapObject } from "../Core/index.js";
 /** @class
  *  An event command for condition event command block.
  *  @extends EventCommand.Base
@@ -43,44 +44,20 @@ declare class If extends Base {
     armorEquiped: boolean;
     keyID: System.DynamicValue;
     keyValue: System.DynamicValue;
+    objectIDLookingAt: System.DynamicValue;
+    orientationLookingAt: Enum.Orientation;
     script: System.DynamicValue;
     constructor(command: any[]);
     /**
-     *  Apply callback with all the heroes.
-     *  @param {Player[]} tab - The heroes list
-     *  @param {Function} callback - The callback
-     *  @returns {boolean}
+     *  Get the hero instance ID.
+     *  @returns {number}
      */
-    allTheHeroes(tab: Player[], callback: Function): boolean;
+    getHeroInstanceID(): number;
     /**
-     *  Apply callback with none of the heroes.
-     *  @param {Player[]} tab - The heroes list
-     *  @param {Function} callback - The callback
-     *  @returns {boolean}
+     *  Initialize the current state.
+     *  @returns {Record<string, any>} The current state
      */
-    noneOfTheHeroes(tab: Player[], callback: Function): boolean;
-    /**
-     *  Apply callback with at least one hero.
-     *  @param {Player[]} tab - The heroes list
-     *  @param {Function} callback - The callback
-     *  @returns {boolean}
-     */
-    atLeastOneHero(tab: Player[], callback: Function): boolean;
-    /**
-     *  Apply callback with the hero with instance ID.
-     *  @param {Player[]} tab - The heroes list
-     *  @param {number} id - The hero instance id
-     *  @param {Function} callback - The callback
-     *  @returns {boolean}
-     */
-    theHeroeWithInstanceID(tab: Player[], id: number, callback: Function): boolean;
-    /**
-     *  Apply callback according to heroes selection.
-     *  @param {Player[]} tab - The heroes list
-     *  @param {Function} callback - The callback
-     *  @returns {boolean}
-    */
-    getResult(tab: Player[], callback: Function): boolean;
+    initialize(): Record<string, any>;
     /**
      *  Update and check if the event is finished.
      *  @param {Record<string, any>} - currentState The current state of the event

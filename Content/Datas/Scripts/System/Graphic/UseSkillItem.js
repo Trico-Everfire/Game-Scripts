@@ -17,7 +17,7 @@ import { Battler, Game } from "../Core/index.js";
  *  @extends Graphic.Base
  */
 class UseSkillItem extends Base {
-    constructor() {
+    constructor({ hideArrow = false } = {}) {
         super();
         this.graphicCharacters = new Array;
         let player;
@@ -26,7 +26,15 @@ class UseSkillItem extends Base {
             player.initializeCharacter(true);
             this.graphicCharacters.push(player);
         }
+        this.hideArrow = hideArrow;
         this.setAll(false);
+    }
+    /**
+     *  Get the selected player.
+     *  @returns {Core.Player}
+     */
+    getSelectedPlayer() {
+        return this.graphicCharacters[this.indexArrow].player;
     }
     /**
      *  Set if all targets are selected or not.
@@ -92,6 +100,24 @@ class UseSkillItem extends Base {
         }
     }
     /**
+     *  Update stat short.
+     *  @param {number} equipmentID
+     *  @param {System.CommonSkillItem} weaponArmor
+     */
+    updateStatShort(weaponArmor) {
+        for (let i = 0, l = this.graphicCharacters.length; i < l; i++) {
+            this.graphicCharacters[i].updateStatShort(weaponArmor);
+        }
+    }
+    /**
+     *  Update stat short to none.
+     */
+    updateStatShortNone() {
+        for (let i = 0, l = this.graphicCharacters.length; i < l; i++) {
+            this.graphicCharacters[i].updateStatShortNone();
+        }
+    }
+    /**
      *  Key pressed repeat handle, but with a small wait after the first
      *  pressure.
      *  @param {number} key - The key ID pressed
@@ -138,13 +164,15 @@ class UseSkillItem extends Base {
         for (i = 0, l = this.graphicCharacters.length; i < l; i++) {
             this.graphicCharacters[i].drawCharacter(x + 5 + (i * 85), y - 32, w, h);
         }
-        if (this.all) {
-            for (i = 0; i < l; i++) {
-                this.drawArrowAtIndex(i, x, y, h);
+        if (!this.hideArrow) {
+            if (this.all) {
+                for (i = 0; i < l; i++) {
+                    this.drawArrowAtIndex(i, x, y, h);
+                }
             }
-        }
-        else {
-            this.drawArrowAtIndex(this.indexArrow, x, y, h);
+            else {
+                this.drawArrowAtIndex(this.indexArrow, x, y, h);
+            }
         }
     }
 }

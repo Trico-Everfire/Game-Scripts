@@ -9,9 +9,8 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 
-import { THREE } from "../Globals";
 import { Player } from "./Player";
-import { Datas } from "../index";
+import { Datas, Scene, System } from "../index";
 import { Item } from "./Item";
 import { Chrono } from "./Chrono";
 import { MapObject } from "./MapObject";
@@ -19,6 +18,7 @@ import { Paths, Constants, Utils, IO, Enum } from "../Common";
 import GroupKind = Enum.GroupKind;
 import CharacterKind = Enum.CharacterKind;
 import { Portion } from "./Portion";
+import { Vector3 } from "./Vector3";
 
 /** @class
  *  All the global informations of a particular game.
@@ -47,11 +47,16 @@ class Game {
     public startupProperties: Record<string, any>;
     public mapsDatas: Record<string, any>;
     public isEmpty: boolean;
+    public shops: Record<string, Record<string, number>[]>;
+    public battleMusic: System.PlaySong;
+    public victoryMusic: System.PlaySong;
 
     constructor(slot: number = -1) {
         this.slot = slot;
         this.hero = new MapObject(Datas.Systems.modelHero.system, Datas.Systems
             .modelHero.position.clone(), true);
+        this.battleMusic = Datas.BattleSystems.battleMusic;
+        this.victoryMusic = Datas.BattleSystems.battleVictory;
         this.isEmpty = true;
     }
 
@@ -89,6 +94,7 @@ class Game {
         this.playTime = new Chrono(json.t);
         this.charactersInstances = json.inst;
         this.variables = json.vars;
+        this.shops = json.shops;
 
         // Items
         this.items = [];
@@ -165,13 +171,18 @@ class Game {
         for (i = 0; i < l; i++) {
             hiddenHeroes[i] = this.hiddenHeroes[i].getSaveCharacter();
         }
+        l = this.items.length;
+        let items: Record<string, any>[] = new Array(l);
+        for (i = 0; i < l; i++) {
+            items[i] = this.items[i].getSave();
+        }
         await IO.saveFile(this.getPathSave(slot),
         {
             t: this.playTime.time,
             th: teamHeroes,
             sh: reserveHeroes,
             hh: hiddenHeroes,
-            itm: this.items,
+            itm: items,
             cur: this.currencies,
             inst: this.charactersInstances,
             vars: this.variables,
@@ -183,8 +194,85 @@ class Game {
             heroStatesOpts: this.heroStatesOptions,
             startS: this.startupStates,
             startP: this.startupProperties,
+            shops: this.shops,
             mapsDatas : this.getCompressedMapsDatas()
         });
+    }
+
+    /** 
+     *  Load the positions that were kept (keep position option).
+     */
+    async loadPositions() {
+        let i: number, l: number, jp: number, j: number, k: number, w: number, 
+            h: number, id: string, objPortion: any[], inf: Record<string, any>, 
+            datas: Record<string, any>, map: Scene.Map, objectMap: Function, 
+            movedObjects: MapObject[], objectMapMinMout: Function;
+        objectMap = objectMap = async (t: number[]) => {
+            let obj = (await MapObject.searchOutMap(t[0])).object;
+            obj.position = new Vector3(t[1], t[2], t[3]);
+            obj.previousPosition = obj.position;
+            return obj;
+        };
+        for (id in this.mapsDatas) {
+            l = this.mapsDatas[id].length;
+            map = null;
+            // First initialize all moved objects
+            movedObjects = [];
+            objPortion = new Array(l);
+            for (i = 0; i < l; i++) {
+                objPortion[i] = new Array(2);
+                for (jp = 0; jp < 2; jp++) {
+                    h = this.mapsDatas[id][i][jp].length;
+                    objPortion[i][jp] = new Array(h);
+                    for (j = (jp === 0 ? 1 : 0); j < h; j++) {
+                        w = this.mapsDatas[id][i][jp][j].length;
+                        objPortion[i][jp][j] = new Array(w);
+                        for (k = 0; k < w; k++) {
+                            inf = {};
+                            datas = this.mapsDatas[id][i][jp][j][k];
+                            if (datas) {
+                                if (datas.m && datas.m.length) {
+                                    if (!map) {
+                                        map = new Scene.Map(parseInt(id), false, true);
+                                        Scene.Map.current = map;
+                                        await map.initializeObjects();
+                                    }
+                                    datas.m = await Promise.all(datas.m.map(objectMap));
+                                    movedObjects = movedObjects.concat(datas.m);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Associate min and mout
+            objectMapMinMout = (i: number) => {
+                return movedObjects[Utils.indexOfProp(movedObjects, "id", i)];
+            }
+            for (i = 0; i < l; i++) {
+                objPortion[i] = new Array(2);
+                for (jp = 0; jp < 2; jp++) {
+                    h = this.mapsDatas[id][i][jp].length;
+                    objPortion[i][jp] = new Array(h);
+                    for (j = (jp === 0 ? 1 : 0); j < h; j++) {
+                        w = this.mapsDatas[id][i][jp][j].length;
+                        objPortion[i][jp][j] = new Array(w);
+                        for (k = 0; k < w; k++) {
+                            inf = {};
+                            datas = this.mapsDatas[id][i][jp][j][k];
+                            if (datas) {
+                                if (datas.min && datas.min.length) {
+                                    datas.min = datas.min.map(objectMapMinMout);
+                                }
+                                if (datas.mout && datas.mout.length) {
+                                    datas.mout = datas.mout.map(objectMapMinMout);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /** 
@@ -193,10 +281,9 @@ class Game {
      */
     getCompressedMapsDatas(): Object {
         let obj = {};
-        let l = Object.keys(this.mapsDatas).length;
-        let i: number, jp: number, j: number, k: number, w: number, h: number, 
-            id: string, objPortion: any[], inf: Record<string, any>, datas: 
-            Record<string, any>;
+        let i: number, l: number, jp: number, j: number, k: number, w: number, 
+            h: number, id: string, objPortion: any[], inf: Record<string, any>, 
+            datas: Record<string, any>, o: MapObject, tab: any[];
         for (id in this.mapsDatas) {
             l = this.mapsDatas[id].length;
             objPortion = new Array(l);
@@ -212,6 +299,43 @@ class Game {
                             inf = {};
                             datas = this.mapsDatas[id][i][jp][j][k];
                             if (datas) {
+                                if (datas.min && datas.min.length) {
+                                    tab = [];
+                                    for (o of datas.min) {
+                                        if (o.currentStateInstance && o
+                                            .currentStateInstance.keepPosition) {
+                                            tab.push(o.system.id);
+                                        }
+                                    }
+                                    if (tab.length) {
+                                        inf.min = tab;
+                                    }
+                                }
+                                if (datas.mout && datas.mout.length) {
+                                    tab = [];
+                                    for (o of datas.mout) {
+                                        if (o.currentStateInstance && o
+                                            .currentStateInstance.keepPosition) {
+                                            tab.push(o.system.id);
+                                        }
+                                    }
+                                    if (tab.length) {
+                                        inf.mout = tab;
+                                    }
+                                }
+                                if (datas.m && datas.m.length) {
+                                    tab = [];
+                                    for (o of datas.m) {
+                                        if (o.currentStateInstance && o
+                                            .currentStateInstance.keepPosition) {
+                                            tab.push([o.system.id, o.position.x, 
+                                                o.position.y, o.position.z]);
+                                        }
+                                    }
+                                    if (tab.length) {
+                                        inf.m = tab;
+                                    }
+                                }
                                 if (datas.si && datas.si.length) {
                                     inf.si = datas.si;
                                 }
@@ -262,6 +386,7 @@ class Game {
         this.mapsDatas = {};
         this.hero.initializeProperties();
         this.playTime = new Chrono(0);
+        this.shops = {};
         this.isEmpty = false;
     }
 
@@ -381,11 +506,20 @@ class Game {
      *  @param {Portion} portion - The portion
      *  @returns {Record<string, any>}
     */
-    getPotionsDatas(id: number, portion: Portion): Record<string, 
-        any>
-    {
-        return this.mapsDatas[id][portion.x][portion.y < 0 ? 0 : 1][Math.abs(
-            portion.y)][portion.z];
+    getPortionDatas(id: number, portion: Portion): Record<string, any> {
+        return this.getPortionPosDatas(id, portion.x, portion.y, portion.z);
+    }
+
+    /** 
+     *  Get the portions datas according to id and position.
+     *  @param {number} id - The map id
+     *  @param {number} i
+     *  @param {number} j
+     *  @param {number} k
+     *  @returns {Record<string, any>}
+    */
+    getPortionPosDatas(id: number, i: number, j: number, k: number): Record<string, any> {
+        return this.mapsDatas[id][i][j < 0 ? 0 : 1][Math.abs(j)][k];
     }
 }
 

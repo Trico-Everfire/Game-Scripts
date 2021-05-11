@@ -32,7 +32,7 @@ class BattleEnemyAttack {
      *  Initialize step.
      */
     initialize() {
-        this.battle.windowTopInformations.content = null;
+        this.battle.windowTopInformations.content.setText("");
         // Define which monster will attack
         let exists = false;
         let i, l;
@@ -43,8 +43,7 @@ class BattleEnemyAttack {
             }
         }
         if (!exists) {
-            this.battle.switchAttackingGroup();
-            this.battle.changeStep(Enum.BattleStep.StartTurn);
+            this.battle.changeStep(Enum.BattleStep.EndTurn);
             return;
         }
         i = 0;

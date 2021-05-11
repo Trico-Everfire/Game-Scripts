@@ -34,6 +34,7 @@ class StartBattle extends Base {
     public transitionStartColor: System.DynamicValue;
     public transitionEnd: number;
     public transitionEndColor: System.DynamicValue;
+    public battleMapType: number;
 
     constructor(command: any[]) {
         super();
@@ -64,8 +65,8 @@ class StartBattle extends Base {
         }
 
         // Battle map
-        type = command[iterator.i++];
-        switch(type) {
+        this.battleMapType = command[iterator.i++];
+        switch(this.battleMapType) {
             case 0: // Existing battle map ID
                 this.battleMapID = System.DynamicValue.createValueCommand(
                     command, iterator);
@@ -129,9 +130,12 @@ class StartBattle extends Base {
         number {
         // Initializing battle
         if (currentState.sceneBattle === null) {
+            if (this.battleMapType === 3) {
+                this.battleMapID = Scene.Map.current.mapProperties.randomBattleMapID;
+            }
             let battleMap = (this.battleMapID === null) ? System.BattleMap
                 .create(this.mapID.getValue(), new Position(this.x.getValue(), 
-                this.y.getValue(), this.yPlus.getValue(), this.z.getValue())) : 
+                this.y.getValue(), this.z.getValue(), this.yPlus.getValue())) : 
                 Datas.BattleSystems.getBattleMap(this.battleMapID.getValue());
             Game.current.heroBattle = new MapObject(Game.current.hero.system,
                 battleMap.position.toVector3(), true);

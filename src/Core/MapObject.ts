@@ -27,6 +27,7 @@ import { Vector3 } from "./Vector3";
 import { Game } from "./Game";
 import { Object3DBox } from "./Object3DBox";
 import { Object3DCustom } from "./Object3DCustom";
+import { Vector } from "three";
 
 interface StructSearchResult {
     object: MapObject,
@@ -46,6 +47,7 @@ class MapObject {
     
     public static SPEED_NORMAL = 0.004666;
 
+    public id: number;
     public system: System.MapObject;
     public position: Vector3;
     public isHero: boolean;
@@ -80,11 +82,13 @@ class MapObject {
     public removed: boolean;
     public upPosition: Vector3;
     public halfPosition: Vector3;
+    public currentOrientationStop: boolean;
 
     constructor(system: System.MapObject, position?: Vector3, isHero: boolean = 
         false)
     {
         this.system = system;
+        this.id = system.id;
         this.position = position;
         this.isHero = isHero;
         this.previousPosition = position;
@@ -106,6 +110,7 @@ class MapObject {
         this.previousOrientation = null;
         this.otherMoveCommand = null;
         this.yMountain = null;
+        this.currentOrientationStop = false;
         if (!this.isHero) {
             this.initializeProperties();
         }
@@ -164,7 +169,7 @@ class MapObject {
 
         // Check if direct
         let globalPortion = Scene.Map.current.allObjects[objectID].getGlobalPortion();
-        let mapsDatas = Game.current.getPotionsDatas(Scene.Map.current.id, 
+        let mapsDatas = Game.current.getPortionDatas(Scene.Map.current.id, 
             globalPortion);
         if (object !== null) {
             return {
@@ -240,7 +245,7 @@ class MapObject {
     static async searchOutMap(objectID: number): Promise<StructSearchResult> {
         let globalPortion = Scene.Map.current.allObjects[objectID]
             .getGlobalPortion();
-        let mapsDatas = Game.current.getPotionsDatas(Scene.Map.current.id, 
+        let mapsDatas = Game.current.getPortionDatas(Scene.Map.current.id, 
             globalPortion);
         let json = await IO.parseFileJSON(Paths.FILE_MAPS + Scene.Map.current
             .mapName + Constants.STRING_SLASH + globalPortion.getFileName());
@@ -293,18 +298,26 @@ class MapObject {
         } else {
             let obj = Scene.Map.current.allObjects[this.system.id];
             if (Utils.isUndefined(obj)) {
-                Platform.showErrorMessage("Can't find object " + this.system.name +
+                Platform.showErrorMessage("Can't find object with name" + this
+                    .system.name + " and ID " + this.system.id + " in map " + 
+                    Scene.Map.current.mapName +
                     " in object linking. Please remove this object from your " +
                     "map and recreate it.\nIf possible, report that you got " +
                     "this error and describe the steps for having this " +
                     "because we are trying to fix this issue.");
             }
             let portion = obj.getGlobalPortion();
-            let portionDatas = Game.current.getPotionsDatas(Scene.Map.current.id, 
+            let portionDatas = Game.current.getPortionDatas(Scene.Map.current.id, 
                 portion);
-            let indexProp = portionDatas.pi.indexOf(this.system.id);
+            let indexProp = -1;
+            if (portionDatas.pi) {
+                indexProp = portionDatas.pi.indexOf(this.system.id);
+            }
             mapProp = (indexProp === -1) ? [] : portionDatas.p[indexProp];
-            indexProp = portionDatas.soi.indexOf(this.system.id);
+            indexProp = -1;
+            if (portionDatas.soi) {
+                indexProp = portionDatas.soi.indexOf(this.system.id);
+            }
             mapStatesOpts = (indexProp === -1) ? [] : portionDatas.so[indexProp];
         }
 
@@ -327,10 +340,20 @@ class MapObject {
             state = stateSystem.copyInstance();
             this.statesInstance[i] = state;
             if (!Utils.isUndefined(stateValue)) {
-                state.graphicID = stateValue.gid;
-                state.rectTileset = stateValue.gt;
-                state.indexX = stateValue.gix;
-                state.indexY = stateValue.giy;
+                state.graphicID = Utils.defaultValue(stateValue.gid, stateSystem.graphicID);
+                state.rectTileset = Utils.defaultValue(stateValue.gt, stateSystem.rectTileset);
+                state.indexX = Utils.defaultValue(stateValue.gix, stateSystem.indexX);
+                state.indexY = Utils.defaultValue(stateValue.giy, stateSystem.indexY);
+                state.speedID = Utils.defaultValue(stateValue.sid, stateSystem.speedID);
+                state.frequencyID =  Utils.defaultValue(stateValue.fid, stateSystem.frequencyID);
+                state.moveAnimation = Utils.defaultValue(stateValue.ma, stateSystem.moveAnimation);
+                state.stopAnimation = Utils.defaultValue(stateValue.sa, stateSystem.stopAnimation);
+                state.climbAnimation = Utils.defaultValue(stateValue.ca, stateSystem.climbAnimation);
+                state.directionFix = Utils.defaultValue(stateValue.df, stateSystem.directionFix);
+                state.through = Utils.defaultValue(stateValue.t, stateSystem.through);
+                state.setWithCamera = Utils.defaultValue(stateValue.swc, stateSystem.setWithCamera);
+                state.pixelOffset = Utils.defaultValue(stateValue.po, stateSystem.pixelOffset);
+                state.keepPosition = Utils.defaultValue(stateValue.kp, stateSystem.keepPosition);
             }
         }
     }
@@ -392,9 +415,6 @@ class MapObject {
     changeState() {
         let angle = this.mesh ? this.mesh.rotation.y : 0;
 
-        // Remove previous mesh
-        this.removeFromScene();
-
         // Updating the current state
         if (this.isHero) {
             this.states = Game.current.heroStates;
@@ -406,21 +426,28 @@ class MapObject {
         } else {
             let pos = Scene.Map.current.allObjects[this.system.id];
             if (Utils.isUndefined(pos)) {
-                Platform.showErrorMessage("Can't find object " + this.system.name +
+                Platform.showErrorMessage("Can't find object with name" + this
+                    .system.name + " and ID " + this.system.id + " in map " + 
+                    Scene.Map.current.mapName +
                     " in object linking. Please remove this object from your " +
                     "map and recreate it.\nIf possible, report that you got " +
                     "this error and describe the steps for having this " +
                     "because we are trying to fix this issue.");
             }
             let portion = pos.getGlobalPortion();
-            let portionDatas = Game.current.getPotionsDatas(Scene.Map.current.id, 
+            let portionDatas = Game.current.getPortionDatas(Scene.Map.current.id, 
                 portion);
-            let indexState = portionDatas.si.indexOf(this.system.id);
+            let indexState = -1;
+            if (portionDatas.si) {
+                indexState = portionDatas.si.indexOf(this.system.id);
+            }
             this.states = (indexState === -1) ? [this.system.states.length > 0 ?
                 this.system.states[0].id : 1] : portionDatas.s[indexState];
         }
+        let previousStateInstance = this.currentStateInstance;
         this.currentState = null;
         this.currentStateInstance = null;
+        this.currentOrientationStop = false;
         let state: System.State;
         for (let i = this.system.states.length - 1; i >= 0; i--) {
             state = this.system.states[i];
@@ -431,8 +458,11 @@ class MapObject {
             }
         }
 
+        // Remove previous mesh
+        this.removeFromScene();
+
         // Update mesh
-        if (this.isStartup) {
+        if (this.isStartup || !Scene.Map.current.textureTileset) {
             return;
         }
         let material = null;
@@ -452,9 +482,8 @@ class MapObject {
         this.meshBoundingBox = new Array;
         let texture = Manager.GL.getMaterialTexture(material);
         if (this.currentState !== null && !this.isNone() && texture) {
-            this.speed = Datas.Systems.getSpeed(this.currentState.speedID);
-            this.frequency = Datas.Systems.getFrequency(this.currentState
-                .frequencyID);
+            this.speed = Datas.Systems.getSpeed(this.currentStateInstance.speedID);
+            this.frequency = Datas.Systems.getFrequency(this.currentStateInstance.frequencyID);
             this.frame.value = this.currentStateInstance.indexX >= Datas.Systems
                 .FRAMES ? Datas.Systems.FRAMES - 1 : this.currentStateInstance
                 .indexX;
@@ -476,9 +505,12 @@ class MapObject {
                         break;
                 }
                 // Correct position offset (left / top)
-                this.position.set(this.position.x - (Datas.Systems.SQUARE_SIZE /
-                    2), this.position.y, this.position.z - (Datas.Systems
-                    .SQUARE_SIZE / 2));
+                if (previousStateInstance && previousStateInstance.graphicKind 
+                    !== ElementMapKind.Object3D) {
+                    this.position.set(this.position.x - (Datas.Systems
+                        .SQUARE_SIZE / 2), this.position.y, this.position.z - (
+                        Datas.Systems.SQUARE_SIZE / 2));
+                }
             } else {
                 let x: number, y: number;
                 if (this.currentStateInstance.graphicID === 0) {
@@ -492,12 +524,22 @@ class MapObject {
                     this.width = texture.image.width / Datas.Systems.SQUARE_SIZE / 
                         Datas.Systems.FRAMES;
                     this.height = texture.image.height / Datas.Systems.SQUARE_SIZE / 
-                        4;
+                        Datas.Pictures.get(Enum.PictureKind.Characters, this
+                        .currentStateInstance.graphicID).getRows();
+                    this.currentOrientationStop = this.currentStateInstance.indexY >= 4;
                 }
                 let sprite = Sprite.create(this.currentState.graphicKind, [x, y, 
                     this.width, this.height]);
-                result = sprite.createGeometry(this.width, this.height, false,
-                    Position.createFromVector3(this.position));
+                result = sprite.createGeometry(this.width, this.height, this
+                    .currentStateInstance.graphicID === 0, Position
+                    .createFromVector3(this.position));
+                // Correct position offset (left / top)
+                if (previousStateInstance && previousStateInstance.graphicKind 
+                    === ElementMapKind.Object3D) {
+                    this.position.set(this.position.x + (Datas.Systems
+                        .SQUARE_SIZE / 2), this.position.y, this.position.z + (
+                        Datas.Systems.SQUARE_SIZE / 2));
+                }
             }
             let geometry = result[0];
             let objCollision = result[1];
@@ -505,17 +547,21 @@ class MapObject {
             this.mesh.position.set(this.position.x, this.position.y, this
                 .position.z);
             this.boundingBoxSettings = objCollision[1][0];
-            if (this.currentStateInstance.graphicID === 0) {
-                let picture = Scene.Map.current.mapProperties.tileset
-                    .picture;
-                this.boundingBoxSettings.squares = picture ? picture
-                    .getSquaresForTexture(this.currentStateInstance.rectTileset)
-                    : [];
+            if (this.boundingBoxSettings) {
+                if (this.currentStateInstance.graphicID === 0) {
+                    let picture = Scene.Map.current.mapProperties.tileset
+                        .picture;
+                    this.boundingBoxSettings.squares = picture ? picture
+                        .getSquaresForTexture(this.currentStateInstance.rectTileset)
+                        : [];
+                }
+                if (this.currentStateInstance.graphicKind === ElementMapKind.Object3D) {
+                    this.boundingBoxSettings.b = [this.boundingBoxSettings.b];
+                }
+                this.updateBB(this.position);
+            } else {
+                this.boundingBoxSettings = null;
             }
-            if (this.currentStateInstance.graphicKind === ElementMapKind.Object3D) {
-                this.boundingBoxSettings.b = [this.boundingBoxSettings.b];
-            }
-            this.updateBB(this.position);
             this.updateUVs();
             this.updateAngle(angle);
         } else {
@@ -523,10 +569,10 @@ class MapObject {
             this.boundingBoxSettings = null;
             this.speed = this.currentState === null ? System.DynamicValue
                 .createNumberDouble(1) : Datas.Systems.getSpeed(this
-                .currentState.speedID);
+                .currentStateInstance.speedID);
             this.frequency = this.currentState === null ? System.DynamicValue
                 .createNumberDouble(0) : Datas.Systems.getFrequency(this
-                .currentState.frequencyID);
+                .currentStateInstance.frequencyID);
             this.width = 0;
             this.height = 0;
         }
@@ -710,6 +756,10 @@ class MapObject {
                 .graphicID][this.getStateIndex()];
         }
         this.removeBBFromScene();
+        // If state option through, ignore BB
+        if (this.currentStateInstance.through) {
+            return;
+        }
         let box: THREE.Mesh;
         switch (this.currentState.graphicKind) {
             case ElementMapKind.SpritesFix:
@@ -848,7 +898,7 @@ class MapObject {
         // Update orientation
         this.orientationEye = orientation;
         orientation = this.orientation;
-        if (this.currentState.setWithCamera) {
+        if (this.currentStateInstance && this.currentStateInstance.setWithCamera) {
             this.updateOrientation();
         }
         if (this.orientation !== orientation) {
@@ -884,6 +934,63 @@ class MapObject {
     }
 
     /** 
+     *  Jump the object (one step).
+     *  @param {Vector3} start - The start position of the jump
+     *  @param {Vector3} end - The end position of the jump
+     *  @param {number} peak - The y peak
+     *  @param {number} currentTime - The current time for jump animation
+     *  @param {number} finalTime - The total final time for complete jump animation
+     *  @returns {number}
+     */
+    jump(start: Vector3, end: Vector3, peak: number, currentTime: number, 
+        finalTime: number): number {
+        if (this.removed) {
+            return finalTime;
+        }
+        
+        // Remove from move
+        this.removeMoveTemp();
+
+        // Set position
+        let a = -(peak - start.y) / ((finalTime / 2) * (finalTime / 2));
+        let coef = 1;
+        if (start.y !== end.y) {
+            let tEnd = Math.sqrt((end.y - peak) / a);
+            let reduce = (finalTime / 2) - tEnd;
+            coef = (finalTime - reduce) / finalTime;
+        }
+        currentTime = Math.min(currentTime + Manager.Stack.elapsedTime, finalTime);
+        let t = (currentTime * coef) - (finalTime / 2);
+        let y = (a * (t * t)) + peak;
+        let x = (currentTime / finalTime) * (end.x - start.x) + start.x;
+        let z = (currentTime / finalTime) * (end.z - start.z) + start.z;
+        this.position.set(x, y, z);
+
+        // Add to moving objects
+        this.addMoveTemp();
+
+        return currentTime;
+    }
+
+    /** 
+     *  Look a direction.
+     *  @param {Vector3} orientation - The direction to look at.
+     */
+    lookAt(oriention: Orientation) {
+        if (this.removed) {
+            return;
+        }
+        this.orientationEye = oriention;
+        oriention = this.orientation;
+        if (this.currentStateInstance && this.currentStateInstance.setWithCamera) {
+            this.updateOrientation();
+        }
+        if (this.orientation !== oriention) {
+            this.updateUVs();
+        }
+    }
+
+    /** 
      *  Remove datas move temp
      */
     removeMoveTemp() {
@@ -891,7 +998,7 @@ class MapObject {
         {
             let previousPortion = Position.createFromVector3(this.position)
                 .getGlobalPortion();
-            let objects = Game.current.getPotionsDatas(Scene.Map.current.id, 
+            let objects = Game.current.getPortionDatas(Scene.Map.current.id, 
                 previousPortion);
 
             // Remove from the moved objects in or out of the portion
@@ -909,7 +1016,7 @@ class MapObject {
             // Add to moved objects of the original portion if not done yet
             let originalPortion = Scene.Map.current.allObjects[this
                 .system.id].getGlobalPortion();
-            objects = Game.current.getPotionsDatas(Scene.Map.current.id, 
+            objects = Game.current.getPortionDatas(Scene.Map.current.id, 
                 originalPortion);
             movedObjects = objects.m;
             if (movedObjects.indexOf(this) === -1) {
@@ -931,7 +1038,7 @@ class MapObject {
         if (!this.isHero) {
             let afterPortion = Position.createFromVector3(this.position)
                 .getGlobalPortion();
-            let objects = Game.current.getPotionsDatas(Scene.Map.current.id, 
+            let objects = Game.current.getPortionDatas(Scene.Map.current.id, 
                 afterPortion);
             let originalPortion = Scene.Map.current.allObjects[this
                 .system.id].getGlobalPortion();
@@ -1015,6 +1122,22 @@ class MapObject {
             return false;
         }
 
+        // Option can be triggered be another object
+        if (!this.system.canBeTriggeredAnotherObject) {
+            for (let interpreter of Manager.Stack.top.reactionInterpreters) {
+                if (interpreter.currentMapObject !== this && interpreter
+                    .currentMapObject != sender) {
+                    return false;
+                }
+            }
+            for (let interpreter of Manager.Stack.top.parallelCommands) {
+                if (interpreter.currentMapObject !== this && interpreter
+                    .currentMapObject != sender) {
+                    return false;
+                }
+            }
+        }
+
         let test = false;
         let i: number, j: number, l: number, m: number, state: number, reactions
             : System.Reaction[];
@@ -1025,6 +1148,11 @@ class MapObject {
             for (j = 0, m = reactions.length; j < m; j++) {
                 Manager.Stack.top.addReaction(sender, reactions[j], this, state,
                     parameters, events);
+                // If sender is in this map and no fix, look at the object
+                if (sender && sender.position && sender !== this && !this
+                    .currentStateInstance.directionFix) {
+                    this.orientationEye = this.getOrientationBetween(sender);
+                }
                 this.receivedOneEvent = true;
                 test = true;
                 if (this.system.isEventFrame) {
@@ -1054,25 +1182,34 @@ class MapObject {
             let orientation = this.orientation;
             if (this.moving) {
                 // If moving, update frame
-                if (this.currentState.moveAnimation) {
+                if (this.currentStateInstance.moveAnimation) {
                     frame = this.frame.update(Datas.Systems.mapFrameDuration
                         .getValue() / this.speed.getValue());
                 }
 
                 // Update mesh position
-                let offset = (this.currentState.pixelOffset && this.frame.value 
-                    % 2 !== 0) ? 1 : 0;
+                let offset = (this.currentStateInstance.pixelOffset && this
+                    .frame.value % 2 !== 0) ? 1 : 0;
                 this.mesh.position.set(this.position.x, this.position.y + offset
                     , this.position.z);
-                //this.updateBBPosition(this.position);
-                this.moving = false;
+                //this.updateBBPosition(this.position)
                 this.previousPosition = this.position;
             } else {
-                frame = this.frame.value !== this.currentStateInstance.indexX;
-                this.frame.value = this.currentStateInstance.indexX;
+                if (this.currentStateInstance.stopAnimation) {
+                    frame = this.frame.update(Datas.Systems.mapFrameDuration
+                        .getValue() / this.speed.getValue());
+                } else {
+                    frame = this.frame.value !== this.currentStateInstance.indexX;
+                    this.frame.value = this.currentStateInstance.indexX;
+                }
+                // Update mesh position
+                let offset = (this.currentStateInstance.pixelOffset && this
+                    .frame.value % 2 !== 0) ? 1 : 0;
+                this.mesh.position.set(this.position.x, this.position.y + offset
+                    , this.position.z);
 
                 // Update angle
-                if (this.currentState.setWithCamera) {
+                if (this.currentStateInstance && this.currentStateInstance.setWithCamera) {
                     this.updateOrientation();
                 }
             }
@@ -1095,6 +1232,7 @@ class MapObject {
         // Time events
         this.receivedOneEvent = false;
         this.updateTimeEvents();
+        this.moving = false;
     }
 
     /** 
@@ -1155,7 +1293,9 @@ class MapObject {
                     h = this.height * Datas.Systems.SQUARE_SIZE / textureHeight;
                     x = (this.frame.value >= Datas.Systems.FRAMES ? Datas
                         .Systems.FRAMES - 1 : this.frame.value) * w;
-                    y = this.orientation * h;
+                    y = (this.orientation + (this.currentOrientationStop || (
+                        this.currentStateInstance.stopAnimation && !this.moving) 
+                        ? 4 : 0)) * h;
                 }
                 let coefX = MapElement.COEF_TEX / textureWidth;
                 let coefY = MapElement.COEF_TEX / textureHeight;
@@ -1210,6 +1350,31 @@ class MapObject {
     isNone(): boolean {
         return this.currentState.graphicKind === ElementMapKind.None || this
             .currentStateInstance.graphicID === -1;
+    }
+
+    /** 
+     *  Get the orientation between two objects.
+     *  @param {Core.MapObject} object
+     *  @returns {Enum.Orientation}
+     */
+    getOrientationBetween(object: MapObject): Enum.Orientation {
+        let x = Math.abs(object.position.x - this.position.x);
+        let z = Math.abs(object.position.z - this.position.z);
+        let orientation = this.orientationEye;
+        if (x >= z) {
+            if (object.position.x >= this.position.x) {
+                orientation = Enum.Orientation.East;
+            } else if (object.position.x < this.position.x) {
+                orientation = Enum.Orientation.West;
+            }
+        } else {
+            if (object.position.z >= this.position.z) {
+                orientation = Enum.Orientation.South;
+            } else if (object.position.z < this.position.z) {
+                orientation = Enum.Orientation.North;
+            }
+        }
+        return orientation;
     }
 }
 

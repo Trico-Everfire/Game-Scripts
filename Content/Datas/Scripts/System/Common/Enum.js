@@ -31,6 +31,28 @@ var Enum;
         CommandMoveKind[CommandMoveKind["MoveFront"] = 11] = "MoveFront";
         CommandMoveKind[CommandMoveKind["MoveBack"] = 12] = "MoveBack";
         CommandMoveKind[CommandMoveKind["ChangeGraphics"] = 13] = "ChangeGraphics";
+        CommandMoveKind[CommandMoveKind["Jump"] = 14] = "Jump";
+        CommandMoveKind[CommandMoveKind["TurnNorth"] = 15] = "TurnNorth";
+        CommandMoveKind[CommandMoveKind["TurnSouth"] = 16] = "TurnSouth";
+        CommandMoveKind[CommandMoveKind["TurnWest"] = 17] = "TurnWest";
+        CommandMoveKind[CommandMoveKind["TurnEast"] = 18] = "TurnEast";
+        CommandMoveKind[CommandMoveKind["Turn90Right"] = 19] = "Turn90Right";
+        CommandMoveKind[CommandMoveKind["Turn90Left"] = 20] = "Turn90Left";
+        CommandMoveKind[CommandMoveKind["LookAtHero"] = 21] = "LookAtHero";
+        CommandMoveKind[CommandMoveKind["LookAtHeroOpposite"] = 22] = "LookAtHeroOpposite";
+        CommandMoveKind[CommandMoveKind["ChangeSpeed"] = 23] = "ChangeSpeed";
+        CommandMoveKind[CommandMoveKind["ChangeFrequency"] = 24] = "ChangeFrequency";
+        CommandMoveKind[CommandMoveKind["MoveAnimation"] = 25] = "MoveAnimation";
+        CommandMoveKind[CommandMoveKind["StopAnimation"] = 26] = "StopAnimation";
+        CommandMoveKind[CommandMoveKind["ClimbAnimation"] = 27] = "ClimbAnimation";
+        CommandMoveKind[CommandMoveKind["FixDirection"] = 28] = "FixDirection";
+        CommandMoveKind[CommandMoveKind["Through"] = 29] = "Through";
+        CommandMoveKind[CommandMoveKind["SetWithCamera"] = 30] = "SetWithCamera";
+        CommandMoveKind[CommandMoveKind["PixelOffset"] = 31] = "PixelOffset";
+        CommandMoveKind[CommandMoveKind["KeepPosition"] = 32] = "KeepPosition";
+        CommandMoveKind[CommandMoveKind["Wait"] = 33] = "Wait";
+        CommandMoveKind[CommandMoveKind["PlaySound"] = 34] = "PlaySound";
+        CommandMoveKind[CommandMoveKind["Script"] = 35] = "Script";
     })(CommandMoveKind = Enum.CommandMoveKind || (Enum.CommandMoveKind = {}));
     /**
      *   Enum for the different event commands kind.
@@ -97,6 +119,15 @@ var Enum;
         EventCommandKind[EventCommandKind["ShakeScreen"] = 55] = "ShakeScreen";
         EventCommandKind[EventCommandKind["FlashScreen"] = 56] = "FlashScreen";
         EventCommandKind[EventCommandKind["Plugin"] = 57] = "Plugin";
+        EventCommandKind[EventCommandKind["StartShopMenu"] = 58] = "StartShopMenu";
+        EventCommandKind[EventCommandKind["RestockShop"] = 59] = "RestockShop";
+        EventCommandKind[EventCommandKind["EnterANameMenu"] = 60] = "EnterANameMenu";
+        EventCommandKind[EventCommandKind["CreateObjectInMap"] = 61] = "CreateObjectInMap";
+        EventCommandKind[EventCommandKind["ChangeStatus"] = 62] = "ChangeStatus";
+        EventCommandKind[EventCommandKind["ResetCamera"] = 63] = "ResetCamera";
+        EventCommandKind[EventCommandKind["ChangeBattleMusic"] = 64] = "ChangeBattleMusic";
+        EventCommandKind[EventCommandKind["ChangeVictoryMusic"] = 65] = "ChangeVictoryMusic";
+        EventCommandKind[EventCommandKind["EndBattle"] = 66] = "EndBattle";
     })(EventCommandKind = Enum.EventCommandKind || (Enum.EventCommandKind = {}));
     ;
     /**
@@ -295,6 +326,28 @@ var Enum;
         DynamicValueKind[DynamicValueKind["Model"] = 45] = "Model";
         DynamicValueKind[DynamicValueKind["CustomStructure"] = 46] = "CustomStructure";
         DynamicValueKind[DynamicValueKind["CustomList"] = 47] = "CustomList";
+        DynamicValueKind[DynamicValueKind["Vector2"] = 48] = "Vector2";
+        DynamicValueKind[DynamicValueKind["Vector3"] = 49] = "Vector3";
+        DynamicValueKind[DynamicValueKind["Bars"] = 50] = "Bars";
+        DynamicValueKind[DynamicValueKind["Icons"] = 51] = "Icons";
+        DynamicValueKind[DynamicValueKind["Autotiles"] = 52] = "Autotiles";
+        DynamicValueKind[DynamicValueKind["Characters"] = 53] = "Characters";
+        DynamicValueKind[DynamicValueKind["Mountains"] = 54] = "Mountains";
+        DynamicValueKind[DynamicValueKind["Tilesets"] = 55] = "Tilesets";
+        DynamicValueKind[DynamicValueKind["Walls"] = 56] = "Walls";
+        DynamicValueKind[DynamicValueKind["Battlers"] = 57] = "Battlers";
+        DynamicValueKind[DynamicValueKind["Facesets"] = 58] = "Facesets";
+        DynamicValueKind[DynamicValueKind["WindowSkins"] = 59] = "WindowSkins";
+        DynamicValueKind[DynamicValueKind["TitleScreen"] = 60] = "TitleScreen";
+        DynamicValueKind[DynamicValueKind["Object3D"] = 61] = "Object3D";
+        DynamicValueKind[DynamicValueKind["Pictures"] = 62] = "Pictures";
+        DynamicValueKind[DynamicValueKind["Animations"] = 63] = "Animations";
+        DynamicValueKind[DynamicValueKind["SkyBoxes"] = 64] = "SkyBoxes";
+        DynamicValueKind[DynamicValueKind["Enum"] = 65] = "Enum";
+        DynamicValueKind[DynamicValueKind["Music"] = 66] = "Music";
+        DynamicValueKind[DynamicValueKind["BackgroundSound"] = 67] = "BackgroundSound";
+        DynamicValueKind[DynamicValueKind["Sound"] = 68] = "Sound";
+        DynamicValueKind[DynamicValueKind["MusicEffect"] = 69] = "MusicEffect";
     })(DynamicValueKind = Enum.DynamicValueKind || (Enum.DynamicValueKind = {}));
     ;
     /**
@@ -527,6 +580,7 @@ var Enum;
     let TitleSettingKind;
     (function (TitleSettingKind) {
         TitleSettingKind[TitleSettingKind["KeyboardAssigment"] = 0] = "KeyboardAssigment";
+        TitleSettingKind[TitleSettingKind["Language"] = 1] = "Language";
     })(TitleSettingKind = Enum.TitleSettingKind || (Enum.TitleSettingKind = {}));
     ;
     /**
@@ -672,7 +726,8 @@ var Enum;
         BattleStep[BattleStep["Selection"] = 2] = "Selection";
         BattleStep[BattleStep["Animation"] = 3] = "Animation";
         BattleStep[BattleStep["EnemyAttack"] = 4] = "EnemyAttack";
-        BattleStep[BattleStep["Victory"] = 5] = "Victory";
+        BattleStep[BattleStep["EndTurn"] = 5] = "EndTurn";
+        BattleStep[BattleStep["Victory"] = 6] = "Victory";
     })(BattleStep = Enum.BattleStep || (Enum.BattleStep = {}));
     ;
     /**
@@ -703,5 +758,49 @@ var Enum;
         StatusRestrictionsKind[StatusRestrictionsKind["AttackRandomAlly"] = 6] = "AttackRandomAlly";
         StatusRestrictionsKind[StatusRestrictionsKind["AttackRandomEnemy"] = 7] = "AttackRandomEnemy";
     })(StatusRestrictionsKind = Enum.StatusRestrictionsKind || (Enum.StatusRestrictionsKind = {}));
+    /**
+     *  Enum for the inventory filter kind.
+     *
+     *  @export
+     *  @enum {number}
+     */
+    let InventoryFilterKind;
+    (function (InventoryFilterKind) {
+        InventoryFilterKind[InventoryFilterKind["All"] = 0] = "All";
+        InventoryFilterKind[InventoryFilterKind["Consumables"] = 1] = "Consumables";
+        InventoryFilterKind[InventoryFilterKind["Custom"] = 2] = "Custom";
+        InventoryFilterKind[InventoryFilterKind["Weapons"] = 3] = "Weapons";
+        InventoryFilterKind[InventoryFilterKind["Armors"] = 4] = "Armors";
+        InventoryFilterKind[InventoryFilterKind["WeaponsAndAmors"] = 5] = "WeaponsAndAmors";
+        InventoryFilterKind[InventoryFilterKind["Script"] = 6] = "Script";
+    })(InventoryFilterKind = Enum.InventoryFilterKind || (Enum.InventoryFilterKind = {}));
+    /**
+     *  Enum for the main menu command kind.
+     *  @export
+     *  @enum {number}
+     */
+    let MainMenuCommandKind;
+    (function (MainMenuCommandKind) {
+        MainMenuCommandKind[MainMenuCommandKind["Inventory"] = 0] = "Inventory";
+        MainMenuCommandKind[MainMenuCommandKind["Skills"] = 1] = "Skills";
+        MainMenuCommandKind[MainMenuCommandKind["Equip"] = 2] = "Equip";
+        MainMenuCommandKind[MainMenuCommandKind["States"] = 3] = "States";
+        MainMenuCommandKind[MainMenuCommandKind["Order"] = 4] = "Order";
+        MainMenuCommandKind[MainMenuCommandKind["Save"] = 5] = "Save";
+        MainMenuCommandKind[MainMenuCommandKind["Quit"] = 6] = "Quit";
+        MainMenuCommandKind[MainMenuCommandKind["Script"] = 7] = "Script";
+    })(MainMenuCommandKind = Enum.MainMenuCommandKind || (Enum.MainMenuCommandKind = {}));
+    /**
+     *  Enum for the troop reaction frequency kind.
+     *  @export
+     *  @enum {number}
+     */
+    let TroopReactionFrequencyKind;
+    (function (TroopReactionFrequencyKind) {
+        TroopReactionFrequencyKind[TroopReactionFrequencyKind["OneTime"] = 0] = "OneTime";
+        TroopReactionFrequencyKind[TroopReactionFrequencyKind["EachTurnBegin"] = 1] = "EachTurnBegin";
+        TroopReactionFrequencyKind[TroopReactionFrequencyKind["EachTurnEnd"] = 2] = "EachTurnEnd";
+        TroopReactionFrequencyKind[TroopReactionFrequencyKind["Always"] = 3] = "Always";
+    })(TroopReactionFrequencyKind = Enum.TroopReactionFrequencyKind || (Enum.TroopReactionFrequencyKind = {}));
 })(Enum || (Enum = {}));
 export { Enum };

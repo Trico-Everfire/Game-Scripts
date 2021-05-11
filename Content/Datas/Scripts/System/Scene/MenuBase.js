@@ -19,8 +19,8 @@ import { Game } from "../Core/index.js";
  * @extends {Base}
  */
 class MenuBase extends Base {
-    constructor() {
-        super(false);
+    constructor(...args) {
+        super(false, ...args);
     }
     /**
      * Return the whole party array.
@@ -85,7 +85,7 @@ class MenuBase extends Base {
     partyGraphics() {
         let array = [];
         for (let i = 0; i < this.party().length; i++) {
-            array[i] = new Graphic.Player(this.party()[i]);
+            array[i] = new Graphic.Player(this.party()[i], { isMainMenu: true });
         }
         return array;
     }

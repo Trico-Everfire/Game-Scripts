@@ -28,7 +28,7 @@ declare class TextIcon extends Base {
         side?: Enum.Align;
         align?: Enum.Align;
         space?: number;
-    });
+    }, textOptions?: {});
     /**
      *  Get the max possible height.
      *  @returns {number}
@@ -39,6 +39,11 @@ declare class TextIcon extends Base {
      *  @returns {number}
      */
     getWidth(): number;
+    /**
+     *  Set the text.
+     *  @param {string} text
+     */
+    setText(text: string): void;
     /**
      *  Drawing the content choice.
      *  @param {number} x - The x position to draw graphic

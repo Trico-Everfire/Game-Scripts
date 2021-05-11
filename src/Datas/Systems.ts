@@ -33,8 +33,15 @@ class Systems {
     public static mountainCollisionHeight: System.DynamicValue;
     public static mountainCollisionAngle: System.DynamicValue;
     public static mapFrameDuration: System.DynamicValue;
+    public static battlersFrames: number;
+    public static battlersColumns: number;
+    public static priceSoldItem: System.DynamicValue;
+    public static enterNameTable: string[][];
     public static showBB: boolean;
-    private static itemsTypes: string[];
+    private static itemsTypes: System.Translatable[];
+    public static inventoryFilters: System.InventoryFilter[];
+    public static mainMenuCommands: System.MainMenuCommand[];
+    public static heroesStatistics: System.DynamicValue[];
     private static colors: System.Color[]
     private static currencies: System.Currency[];
     private static windowSkins: System.WindowSkin[];
@@ -42,7 +49,7 @@ class Systems {
     private static detections: System.Detection[];
     private static skyboxes: System.Skybox[];
     private static fontSizes: System.DynamicValue[];
-    private static fontNames: System.DynamicValue[];
+    private static fontNames: System.FontName[];
     private static speeds: System.DynamicValue[];
     private static frequencies: System.DynamicValue[];
     public static soundCursor: System.PlaySong;
@@ -101,6 +108,10 @@ class Systems {
             .readOrDefaultNumberDouble(json.mca, 45);
         this.mapFrameDuration = System.DynamicValue.readOrDefaultNumber(json.mfd
             , 150);
+        this.battlersFrames = Utils.defaultValue(json.battlersFrames, 4);
+        this.battlersColumns = Utils.defaultValue(json.battlersColumns, 9);
+        this.priceSoldItem = System.DynamicValue.readOrDefaultNumberDouble(json
+            .priceSoldItem, 50);
 
         // Path BR
         this.PATH_BR = Paths.FILES + json.pathBR;
@@ -125,6 +136,9 @@ class Systems {
 
         // Lists
         this.itemsTypes = [];
+        this.inventoryFilters = [];
+        this.mainMenuCommands = [];
+        this.heroesStatistics = [];
         this.colors = [];
         this.currencies = [];
         this.windowSkins = [];
@@ -136,9 +150,15 @@ class Systems {
         this.speeds = [];
         this.frequencies = [];
         Utils.readJSONSystemList({ list: json.itemsTypes, listIDs: this
-            .itemsTypes, func: (element: Record<string, any>) =>
+            .itemsTypes, cons: System.Translatable });
+        Utils.readJSONSystemList({ list: json.inventoryFilters, listIndexes: this
+            .inventoryFilters, cons: System.InventoryFilter });
+        Utils.readJSONSystemList({ list: json.mainMenuCommands, listIndexes: this
+            .mainMenuCommands, cons: System.MainMenuCommand });
+        Utils.readJSONSystemList({ list: json.heroesStatistics, listIndexes: this
+            .heroesStatistics, func: (element: Record<string, any>) =>
         {
-            return element.name;
+            return System.DynamicValue.readOrDefaultDatabase(element.statisticID);
         }});
         Utils.readJSONSystemList({ list: json.colors, listIDs: this.colors, cons
             : System.Color });
@@ -157,12 +177,8 @@ class Systems {
         {
             return System.DynamicValue.readOrDefaultNumber(element.s, 0);
         }});
-        Utils.readJSONSystemList({ list: json.fn, listIDs: this.fontNames, func:
-            (element: Record<string, any>) =>
-        {
-            return System.DynamicValue.readOrDefaultMessage(element.f, Constants
-                .DEFAULT_FONT_NAME);
-        }});
+        Utils.readJSONSystemList({ list: json.fn, listIDs: this.fontNames, cons:
+            System.FontName });
         Utils.readJSONSystemList({ list: json.sf, listIDs: this.speeds, func: 
             (element: Record<string, any>) =>
         {
@@ -185,6 +201,9 @@ class Systems {
             .getEventCommand(json.dbo);
         this.dbOptions.update();
 
+        // Enter name menu options
+        this.enterNameTable = json.enterNameTable;
+
         // Initialize loading scene now that basics are loaded
         Manager.Stack.sceneLoading = new Scene.Loading();
         Manager.Stack.requestPaintHUD = true;
@@ -196,7 +215,7 @@ class Systems {
      *  @param {number} id
      *  @returns {string}
      */
-    static getItemType(id: number): string {
+    static getItemType(id: number): System.Translatable {
         return Datas.Base.get(id, this.itemsTypes, "item type");
     }
 
@@ -276,7 +295,7 @@ class Systems {
      *  @param {number} id
      *  @returns {string}
      */
-    static getFontName(id: number): System.DynamicValue {
+    static getFontName(id: number): System.FontName {
         return Datas.Base.get(id, this.fontNames, "font name");
     }
 

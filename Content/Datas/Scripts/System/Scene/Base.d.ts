@@ -15,6 +15,13 @@ declare abstract class Base {
      */
     reactionInterpreters: ReactionInterpreter[];
     /**
+     * An array of reaction interpreters caused by effects.
+     *
+     * @type {ReactionInterpreter[]}
+     * @memberof Base
+     */
+    reactionInterpretersEffects: ReactionInterpreter[];
+    /**
      * the array holding parallel commands.
      *
      * @type {ReactionInterpreter[]}
@@ -38,7 +45,8 @@ declare abstract class Base {
     /**
      * @param {boolean} [loading - = true] tell whether or not the scene is loading asynchronosively.
      */
-    constructor(loading?: boolean);
+    constructor(loading?: boolean, ...args: any);
+    initialize(...args: any): void;
     /**
      * assign and create all the contents of the scene synchronously.
      *
@@ -60,6 +68,10 @@ declare abstract class Base {
      * @memberof Base
      */
     load(): Promise<void>;
+    /**
+     *  Translate the scene if possible.
+     */
+    translate(): void;
     /**
      * Update all the reaction interpreters from the scenes.
      *
@@ -86,10 +98,7 @@ declare abstract class Base {
      *
      * @memberof Base
      */
-    addReaction(sender: MapObject, reaction: System.Reaction, object: MapObject, state: number, parameters: System.DynamicValue[], event: [
-        System.Event,
-        number
-    ], moving?: boolean): ReactionInterpreter;
+    addReaction(sender: MapObject, reaction: System.Reaction, object: MapObject, state: number, parameters: System.DynamicValue[], event: [System.Event, number], moving?: boolean): ReactionInterpreter;
     /**
      * Update the scene.
      *

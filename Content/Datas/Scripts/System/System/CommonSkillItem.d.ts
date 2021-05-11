@@ -1,3 +1,4 @@
+import { Enum } from "../Common/index.js";
 import { Icon } from "./Icon.js";
 import { Translatable } from "./Translatable.js";
 import { DynamicValue } from "./DynamicValue.js";
@@ -12,6 +13,7 @@ import { System } from "../index.js";
  *  @param {Record<string, any>} - [json=undefined] Json object describing the common
  */
 declare class CommonSkillItem extends Icon {
+    id: number;
     hasType: boolean;
     hasTargetKind: boolean;
     type: number;
@@ -25,7 +27,8 @@ declare class CommonSkillItem extends Icon {
     sound: PlaySong;
     animationID: DynamicValue;
     animationTargetID: DynamicValue;
-    price: DynamicValue;
+    canBeSold: System.DynamicValue;
+    price: Cost[];
     costs: Cost[];
     effects: Effect[];
     characteristics: Characteristic[];
@@ -64,5 +67,30 @@ declare class CommonSkillItem extends Icon {
      *  @returns {System/WeaponArmorKind}
      */
     getType(): System.WeaponArmorKind;
+    /**
+     *  Get the price.
+     *  @returns {number}
+     */
+    getPrice(): Record<string, number>;
+    /**
+     *  Get the item kind.
+     *  @returns {Enum.ItemKind}
+     */
+    getKind(): Enum.ItemKind;
+    /**
+     *  Check if is weapon.
+     *  @returns {boolean}
+     */
+    isWeapon(): boolean;
+    /**
+     *  Check if is armor.
+     *  @returns {boolean}
+     */
+    isArmor(): boolean;
+    /**
+     *  Check if is weapon or armor.
+     *  @returns {boolean}
+     */
+    isWeaponArmor(): boolean;
 }
 export { CommonSkillItem };

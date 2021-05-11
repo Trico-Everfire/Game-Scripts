@@ -47,7 +47,7 @@ class PlayerDescription extends Base {
 
         // Informations
         let system = this.player.system;
-        let cl = Datas.Classes.get(system.idClass);
+        let cl = system.class;
         let levelStat = Datas.BattleSystems.getLevelStatistic();
         let expStat = Datas.BattleSystems.getExpStatistic();
 
@@ -57,13 +57,13 @@ class PlayerDescription extends Base {
         this.graphicName = new Graphic.Text(this.player.name);
         this.graphicClass = new Graphic.Text(cl.name(), { fontSize: Constants
             .MEDIUM_FONT_SIZE });
-        this.graphicLevelName = new Graphic.Text(levelStat.name);
+        this.graphicLevelName = new Graphic.Text(levelStat.name());
         this.graphicLevel = new Graphic.Text(Utils.numToString(player[levelStat
             .abbreviation]));
         if (expStat === null) {
             this.graphicExpName = null;
         } else {
-            this.graphicExpName = new Graphic.Text(expStat.name, { fontSize: 
+            this.graphicExpName = new Graphic.Text(expStat.name(), { fontSize: 
                 Constants.MEDIUM_FONT_SIZE });
             this.graphicExp = new Graphic.Text(player.getBarAbbreviation(expStat
                 ), { fontSize: Constants.MEDIUM_FONT_SIZE });
@@ -87,7 +87,7 @@ class PlayerDescription extends Base {
                 if (statistic.isRes) {
                     continue;
                 }
-                graphicName = new Graphic.Text(statistic.name + Constants
+                graphicName = new Graphic.Text(statistic.name() + Constants
                     .STRING_COLON);
                 Platform.ctx.font = graphicName.font;
                 graphicName.updateContextFont();
@@ -112,7 +112,7 @@ class PlayerDescription extends Base {
         // Battler
         this.battler = Datas.Pictures.getPictureCopy(PictureKind.Battlers, 
             system.idBattler);
-        this.battlerFrame = new Frame(250);
+        this.battlerFrame = new Frame(250, { frames: Datas.Systems.battlersFrames });
     }
 
     /** 
@@ -167,7 +167,7 @@ class PlayerDescription extends Base {
                 .BattleSystems.idExpStatistic)
             {
                 statistic = Datas.BattleSystems.getStatistic(id);
-                graphicName = new Graphic.Text(statistic.name + Constants
+                graphicName = new Graphic.Text(statistic.name() + Constants
                     .STRING_COLON);
                 Platform.ctx.font = graphicName.font;
                 graphicName.updateContextFont();
@@ -240,8 +240,8 @@ class PlayerDescription extends Base {
         let xCharacter = x + 80;
         let yName = y + 20;
         let coef = Constants.BASIC_SQUARE_SIZE / Datas.Systems.SQUARE_SIZE;
-        let wBattler = this.battler.oW / Datas.Systems.FRAMES;
-        let hBattler = this.battler.oH / Battler.STEPS;
+        let wBattler = this.battler.oW / Datas.Systems.battlersFrames;
+        let hBattler = this.battler.oH / Datas.Systems.battlersColumns;
 
         // Battler
         this.battler.draw(x + (80 - (wBattler * coef)) / 2, y + 80 - (hBattler *

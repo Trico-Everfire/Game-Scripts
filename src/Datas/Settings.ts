@@ -9,6 +9,7 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 
+import { Datas } from "..";
 import { IO, Paths, Utils, Enum } from "../Common";
 import TitleSettingKind = Enum.TitleSettingKind;
 
@@ -19,8 +20,8 @@ import TitleSettingKind = Enum.TitleSettingKind;
 class Settings {
 
     public static kb: number[][][];
-
-    public static isDevMode: boolean;
+    public static currentLanguage: number;
+    public static isProtected: boolean;
 
     constructor() {
         throw new Error("This is a static class!");
@@ -38,6 +39,8 @@ class Settings {
         for (let id in jsonObjs) {
             this.kb[id] = jsonObjs[id];
         }
+        this.currentLanguage = Utils.defaultValue(json[Utils.numToString(
+            TitleSettingKind.Language)], Datas.Languages.getMainLanguageID());
     }
 
     /** 
@@ -51,6 +54,7 @@ class Settings {
             jsonObjs[id] = this.kb[id];
         }
         json[Utils.numToString(TitleSettingKind.KeyboardAssigment)] = jsonObjs;
+        json[Utils.numToString(TitleSettingKind.Language)] = this.currentLanguage;
         IO.saveFile(Paths.FILE_SETTINGS, json);
     }
 
@@ -58,8 +62,8 @@ class Settings {
      *  Check if the app is in dev mode
      *  @static
      */
-    static async checkIsDevMode() {
-        this.isDevMode = await (IO.fileExists(Paths.FILE_TREE_MAP));
+    static async checkIsProtected() {
+        this.isProtected = await (IO.fileExists(Paths.FILE_PROTECT));
     }
 
     /** 
@@ -70,6 +74,15 @@ class Settings {
      */
     static updateKeyboard(id: number, sc: number[][]) {
         this.kb[id] = sc;
+        this.write();
+    }
+
+    /** 
+     *  Update current language setting.
+     *  @param {number} id
+     */
+    static updateCurrentLanguage(id: number) {
+        this.currentLanguage = id;
         this.write();
     }
 }

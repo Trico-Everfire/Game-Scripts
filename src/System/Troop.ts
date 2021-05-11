@@ -9,6 +9,8 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 
+import { System } from "..";
+import { Utils } from "../Common";
 import { Base } from "./Base";
 
 interface StructTroopElement {
@@ -25,6 +27,7 @@ interface StructTroopElement {
 class Troop extends Base {
 
     public list: StructTroopElement[];
+    public reactions: System.TroopReaction[];
 
     constructor(json?: Record<string, any>) {
         super(json);
@@ -35,7 +38,7 @@ class Troop extends Base {
      *  @param {Record<string, any>} - json Json object describing the troop
      */
     read(json: Record<string, any>) {
-        let jsonList = json.l;
+        let jsonList = Utils.defaultValue(json.l, []);
         let l = jsonList.length;
         this.list = new Array(l);
         let jsonElement: Record<string, any>;
@@ -46,6 +49,9 @@ class Troop extends Base {
                 level: jsonElement.l
             };
         }
+        this.reactions = [];
+        Utils.readJSONSystemList({ list: Utils.defaultValue(json.reactions, []), 
+            listIndexes: this.reactions, cons: System.TroopReaction });
     }
 }
 

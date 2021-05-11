@@ -19,6 +19,7 @@ import { PlaySong } from "./PlaySong.js";
 import { Cost } from "./Cost.js";
 import { Characteristic } from "./Characteristic.js";
 import { Effect } from "./Effect.js";
+import { System } from "../index.js";
 /** @class
  *  A common class for skills, items, weapons, armors.
  *  @extends System.Icon
@@ -34,10 +35,11 @@ class CommonSkillItem extends Icon {
      */
     read(json) {
         super.read(json);
+        this.id = json.id;
         this.type = Utils.defaultValue(json.t, 1);
         this.consumable = Utils.defaultValue(json.con, false);
         this.oneHand = Utils.defaultValue(json.oh, true);
-        this.description = new Translatable(Utils.defaultValue(json.d, Translatable.EMPTY_NAMES));
+        this.description = new Translatable(json.d);
         this.targetKind = Utils.defaultValue(json.tk, TargetKind.None);
         this.targetConditionFormula = DynamicValue.readOrNone(json.tcf);
         this.conditionFormula = DynamicValue.readOrNone(json.cf);
@@ -45,7 +47,10 @@ class CommonSkillItem extends Icon {
         this.sound = new PlaySong(SongKind.Sound, json.s);
         this.animationUserID = DynamicValue.readOrNone(json.auid);
         this.animationTargetID = DynamicValue.readOrNone(json.atid);
-        this.price = DynamicValue.readOrDefaultNumber(json.p);
+        this.canBeSold = DynamicValue.readOrDefaultSwitch(json.canBeSold);
+        this.price = [];
+        Utils.readJSONSystemList({ list: Utils.defaultValue(json.p, []),
+            listIndexes: this.price, cons: Cost });
         this.costs = [];
         Utils.readJSONSystemList({ list: Utils.defaultValue(json.cos, []),
             listIndexes: this.costs, cons: Cost });
@@ -130,6 +135,41 @@ class CommonSkillItem extends Icon {
      */
     getType() {
         return null;
+    }
+    /**
+     *  Get the price.
+     *  @returns {number}
+     */
+    getPrice() {
+        return System.Cost.getPrice(this.price);
+    }
+    /**
+     *  Get the item kind.
+     *  @returns {Enum.ItemKind}
+     */
+    getKind() {
+        return null;
+    }
+    /**
+     *  Check if is weapon.
+     *  @returns {boolean}
+     */
+    isWeapon() {
+        return this.getKind() === Enum.ItemKind.Weapon;
+    }
+    /**
+     *  Check if is armor.
+     *  @returns {boolean}
+     */
+    isArmor() {
+        return this.getKind() === Enum.ItemKind.Armor;
+    }
+    /**
+     *  Check if is weapon or armor.
+     *  @returns {boolean}
+     */
+    isWeaponArmor() {
+        return this.isWeapon() || this.isArmor();
     }
 }
 export { CommonSkillItem };

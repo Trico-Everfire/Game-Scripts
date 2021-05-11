@@ -9,7 +9,7 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 
-import { StructMapElementCollision, MapElement } from "./index";
+import { MapElement } from "./index";
 import { Sprite } from "./index";
 import { Utils, Constants } from "../Common";
 import { Datas, System, Core } from "../index";
@@ -427,8 +427,8 @@ class Mountain extends MapElement {
         let w = Datas.Systems.SQUARE_SIZE / width;
         let localPosition = position.toVector3(false);
         let center = new Vector3(localPosition.x + (Datas.Systems
-            .SQUARE_SIZE / 2), localPosition.y + (hp / 2), localPosition.z + (
-            Datas.Systems.SQUARE_SIZE / 2));
+            .SQUARE_SIZE / 2), localPosition.y + (Datas.Systems.SQUARE_SIZE / 2), 
+            localPosition.z + (Datas.Systems.SQUARE_SIZE / 2));
         let xLeft = localPosition.x;
         let xRight = localPosition.x + Datas.Systems.SQUARE_SIZE;
         let yTop = localPosition.y + hp;

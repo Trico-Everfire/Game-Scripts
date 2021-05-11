@@ -1,5 +1,5 @@
 import { Base } from "./Base.js";
-import { System, Graphic, Core } from "../index.js";
+import { Graphic, Core } from "../index.js";
 /** @class
  *  The graphic displaying all the items information in the inventory menu.
  *  @param {Item} item - The current selected item
@@ -7,11 +7,20 @@ import { System, Graphic, Core } from "../index.js";
  */
 declare class Item extends Base {
     item: Core.Item;
-    system: System.CommonSkillItem;
     graphicName: Graphic.TextIcon;
     graphicNb: Graphic.Text;
     graphicInformations: Graphic.SkillItem;
-    constructor(item: Core.Item, nbItem?: number);
+    graphicCurrencies: Graphic.TextIcon[];
+    constructor(item: Core.Item, { nbItem, possible, showSellPrice }?: {
+        nbItem?: number;
+        possible?: boolean;
+        showSellPrice?: boolean;
+    });
+    /**
+     *  Update the item name (+ item number if shop).
+     *  @param {number} [nbItem=undefined]
+     */
+    updateName(nbItem?: number): void;
     /**
      *  Update the game item number.
      */

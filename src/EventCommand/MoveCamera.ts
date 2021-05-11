@@ -86,6 +86,7 @@ class MoveCamera extends Base {
      *  @returns {Record<string, any>} The current state
      */
     initialize(): Record<string, any> {
+        Scene.Map.current.camera.update();
         let time = this.time.getValue() * 1000;
         let operation = Mathf.OPERATORS_NUMBERS[this.operation];
         let finalX = operation(Scene.Map.current.camera.getThreeCamera()
@@ -176,7 +177,7 @@ class MoveCamera extends Base {
                     }
                     timeRate = difNb / currentState.time;
                 }
-
+                
                 // Move
                 let positionOffset = new Vector3(
                     timeRate * currentState.finalDifPosition.x,

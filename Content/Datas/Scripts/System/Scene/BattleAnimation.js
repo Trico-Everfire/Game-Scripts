@@ -8,11 +8,10 @@
     See RPG Paper Maker EULA here:
         http://rpg-paper-maker.com/index.php/eula.
 */
-import { Scene, Graphic, Datas, Manager } from "../index.js";
+import { Scene, Datas, Manager } from "../index.js";
 import { Enum } from "../Common/index.js";
 var EffectSpecialActionKind = Enum.EffectSpecialActionKind;
 var CharacterKind = Enum.CharacterKind;
-var Align = Enum.Align;
 var ItemKind = Enum.ItemKind;
 var AnimationEffectConditionKind = Enum.AnimationEffectConditionKind;
 var AnimationPositionKind = Enum.AnimationPositionKind;
@@ -48,16 +47,16 @@ class BattleAnimation {
                 break;
             case EffectSpecialActionKind.OpenItems:
                 content = this.battle.attackingGroup === CharacterKind.Hero ? this.battle.windowChoicesItems
-                    .getCurrentContent().system : Datas.Items.get(this.battle
-                    .action.itemID.getValue());
+                    .getCurrentContent().item.system : Datas.Items.get(this
+                    .battle.action.itemID.getValue());
                 this.battle.informationText = content.name();
                 break;
             default:
                 this.battle.informationText = "";
                 break;
         }
-        this.battle.windowTopInformations.content = new Graphic.Text(this.battle
-            .informationText, { align: Align.Center });
+        this.battle.windowTopInformations.content.setText(this
+            .battle.informationText);
         this.battle.time = new Date().getTime();
         this.battle.effects = [];
         let i, l;
@@ -69,7 +68,7 @@ class BattleAnimation {
                     for (i = 0, l = equipments.length; i < l; i++) {
                         gameItem = equipments[i];
                         if (gameItem && gameItem.kind === ItemKind.Weapon) {
-                            weapon = gameItem.getItemInformations();
+                            weapon = gameItem.system;
                             this.battle.animationUser = new Animation(weapon
                                 .animationUserID.getValue());
                             this.battle.animationTarget = new Animation(weapon
@@ -217,7 +216,7 @@ class BattleAnimation {
                 break;
             case 2: // Damages
                 // If calling a common reaction, wait for it to be finished
-                if (this.battle.reactionInterpreters.length > 0) {
+                if (this.battle.reactionInterpretersEffects.length > 0) {
                     for (i = 0, l = this.battle.targets.length; i < l; i++) {
                         this.battle.targets[i].timeDamage = 0;
                     }
@@ -320,9 +319,7 @@ class BattleAnimation {
                             return;
                         }
                         if (this.battle.isEndTurn()) {
-                            this.battle.activeGroup();
-                            this.battle.switchAttackingGroup();
-                            this.battle.changeStep(Enum.BattleStep.StartTurn);
+                            this.battle.changeStep(Enum.BattleStep.EndTurn);
                         }
                         else {
                             if (this.battle.attackingGroup === CharacterKind.Hero) {
@@ -387,8 +384,8 @@ class BattleAnimation {
             }
         }
         // Draw damages
-        if (this.battle.reactionInterpreters.length === 0 && (this.battle.user ===
-            null || !this.battle.user.isAttacking()) && (!this.battle
+        if (this.battle.reactionInterpretersEffects.length === 0 && (this.battle
+            .user === null || !this.battle.user.isAttacking()) && (!this.battle
             .animationTarget || this.battle.animationTarget.frame > this.battle
             .animationTarget.system.frames.length)) {
             for (i = 0, l = this.battle.targets.length; i < l; i++) {

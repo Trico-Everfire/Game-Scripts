@@ -8,17 +8,17 @@
     See RPG Paper Maker EULA here:
         http://rpg-paper-maker.com/index.php/eula.
 */
-import { Base } from "./Base.js";
 import { Class } from "./Class.js";
 import { Utils } from "../Common/index.js";
-import { Datas } from "../index.js";
+import { Datas, System } from "../index.js";
+import { Translatable } from "./Translatable.js";
 /** @class
  *  An hero of the game.
  *  @extends System.Base
  *  @param {Record<string, any>} - [json=undefined] Json object describing the
  *  hero
  */
-class Hero extends Base {
+class Hero extends Translatable {
     constructor(json) {
         super(json);
     }
@@ -27,11 +27,19 @@ class Hero extends Base {
      *  @param {Record<string, any>} - json Json object describing the hero
      */
     read(json) {
-        this.name = json.names[1];
-        this.idClass = json.class;
+        super.read(json);
+        this.class = Datas.Classes.get(json.class, "Could not find the class in "
+            + (this.isMonster() ? "monster" : "hero") + " " + Utils.getIDName(json.id, this.name()) + ", please check your Data manager and add a correct class.");
         this.idBattler = Utils.defaultValue(json.bid, -1);
         this.idFaceset = Utils.defaultValue(json.fid, -1);
         this.classInherit = new Class(json.ci);
+    }
+    /**
+     *  Check if this hero is a monster.
+     *  @returns {boolean}
+     */
+    isMonster() {
+        return this instanceof System.Monster;
     }
     /**
      *  Get the property according to class inherit and this hero.
@@ -39,24 +47,28 @@ class Hero extends Base {
      *  @returns {number}
      */
     getProperty(prop) {
-        return Datas.Classes.get(this.idClass).getProperty(prop, this
-            .classInherit);
+        return this.class.getProperty(prop, this.classInherit);
     }
     /**
      *  Get the experience table according to class inherit and this hero.
      *  @returns {Record<string, any>}
      */
     getExperienceTable() {
-        return Datas.Classes.get(this.idClass).getExperienceTable(this
-            .classInherit);
+        return this.class.getExperienceTable(this.classInherit);
+    }
+    /**
+     *  Get the characteristics according to class inherit and this hero.
+     *  @returns {System.Characteristic[]}
+     */
+    getCharacteristics() {
+        return this.class.getCharacteristics(this.classInherit);
     }
     /**
      *  Get the statistics progression according to class inherit and this hero.
      *  @returns {System.StatisticProgression[]}
      */
     getStatisticsProgression() {
-        return Datas.Classes.get(this.idClass).getStatisticsProgression(this
-            .classInherit);
+        return this.class.getStatisticsProgression(this.classInherit);
     }
     /**
      *  Get the skills according to class inherit and this hero.
@@ -64,7 +76,7 @@ class Hero extends Base {
      *  @returns {Skill[]}
      */
     getSkills(level) {
-        return Datas.Classes.get(this.idClass).getSkills(this.classInherit, level);
+        return this.class.getSkills(this.classInherit, level);
     }
     /**
      *  Get the learned skill at a specific level according to class inherit and
@@ -73,8 +85,7 @@ class Hero extends Base {
      *  @returns {Skill[]}
      */
     getLearnedSkills(level) {
-        return Datas.Classes.get(this.idClass).getLearnedSkills(this
-            .classInherit, level);
+        return this.class.getLearnedSkills(this.classInherit, level);
     }
     /**
      *  Create the experience list according to base and inflation.

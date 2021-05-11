@@ -12,6 +12,7 @@ declare class Paths {
     static readonly FILE_MAP_OBJECTS = "/objects.json";
     static readonly FILE_PICTURES: string;
     static readonly FILE_VIDEOS: string;
+    static readonly FILE_FONTS: string;
     static readonly FILE_SONGS: string;
     static readonly FILE_SHAPES: string;
     static readonly FILE_COMMON_EVENTS: string;
@@ -35,11 +36,13 @@ declare class Paths {
     static readonly FILE_ANIMATIONS: string;
     static readonly FILE_STATUS: string;
     static readonly FILE_SCRIPTS: string;
-    static readonly FILE_TREE_MAP: string;
+    static readonly FILE_LANGS: string;
+    static readonly FILE_PROTECT: string;
     static readonly FILE_PLUGIN_CODE = "code.js";
     static readonly FILE_PLUGIN_DETAILS = "details.json";
     static readonly PICTURES = "/Content/Images";
     static readonly VIDEOS = "/Content/Videos";
+    static readonly FONTS = "/Content/Fonts";
     static readonly HUD: string;
     static readonly TEXTURES2D: string;
     static readonly BARS: string;

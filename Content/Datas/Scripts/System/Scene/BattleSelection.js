@@ -13,7 +13,6 @@ import { Enum } from "../Common/index.js";
 var BattleStep = Enum.BattleStep;
 var EffectSpecialActionKind = Enum.EffectSpecialActionKind;
 var CharacterKind = Enum.CharacterKind;
-var Align = Enum.Align;
 var ItemKind = Enum.ItemKind;
 var AvailableKind = Enum.AvailableKind;
 var TargetKind = Enum.TargetKind;
@@ -55,12 +54,11 @@ class BattleSelection {
             }
         }
         if (!exists) {
-            this.battle.switchAttackingGroup();
-            this.battle.changeStep(Enum.BattleStep.StartTurn);
+            this.battle.changeStep(Enum.BattleStep.EndTurn);
             return;
         }
         this.battle.battleCommandKind = EffectSpecialActionKind.None;
-        this.battle.windowTopInformations.content = new Graphic.Text("Select an ally", { align: Align.Center });
+        this.battle.windowTopInformations.content.setText("Select an ally");
         this.battle.selectedUserIndex = this.selectFirstIndex(CharacterKind.Hero, 0);
         this.battle.kindSelection = CharacterKind.Hero;
         this.battle.userTarget = false;
@@ -75,7 +73,7 @@ class BattleSelection {
         let ownedItem, item;
         for (let i = 0, l = Game.current.items.length; i < l; i++) {
             ownedItem = Game.current.items[i];
-            item = Datas.Items.get(ownedItem.id);
+            item = Datas.Items.get(ownedItem.system.id);
             if (ownedItem.kind === ItemKind.Item && item.consumable && (item
                 .availableKind === AvailableKind.Battle || item.availableKind
                 === AvailableKind.Always)) {
@@ -295,7 +293,7 @@ class BattleSelection {
                 return;
             case EffectSpecialActionKind.OpenItems:
                 this.selectTarget(this.battle
-                    .windowItemDescription.content.system.targetKind);
+                    .windowItemDescription.content.item.system.targetKind);
                 this.registerLastItemIndex();
                 return;
             default:
@@ -315,7 +313,7 @@ class BattleSelection {
                 for (i = 0, l = equipments.length; i < l; i++) {
                     gameItem = equipments[i];
                     if (gameItem && gameItem.kind === ItemKind.Weapon) {
-                        targetKind = gameItem.getItemInformations().targetKind;
+                        targetKind = gameItem.system.targetKind;
                         break;
                     }
                 }

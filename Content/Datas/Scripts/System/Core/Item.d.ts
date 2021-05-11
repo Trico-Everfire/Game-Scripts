@@ -9,9 +9,10 @@ import { System } from "../index.js";
  */
 declare class Item {
     kind: ItemKind;
-    id: number;
+    system: System.CommonSkillItem;
     nb: number;
-    constructor(kind: ItemKind, id: number, nb: number);
+    shop: System.ShopItem;
+    constructor(kind: ItemKind, id: number, nb: number, shop?: System.ShopItem);
     /**
      *  Find an item in the inventory.
      *  @static
@@ -21,20 +22,20 @@ declare class Item {
      */
     static findItem(kind: ItemKind, id: number): Item;
     /**
+     *  The json save.
+     */
+    getSave(): Record<string, any>;
+    /**
      *  Remove item from inventory.
      *  @param {number} nb - Number of item to remove
+     *  @returns {boolean}
      */
-    remove(nb: number): void;
+    remove(nb: number): boolean;
     /**
      *  Add item in inventory.
      *  @param {number} nb - Number of item to add
      */
     add(nb: number): void;
-    /**
-     *  Get the item informations System.
-     *  @returns {System.CommonSkillItem}
-     */
-    getItemInformations(): System.CommonSkillItem;
     /**
      *  Modify items only if already in inventory.
      *  @param {Function} callback - callback function for action
@@ -71,5 +72,26 @@ declare class Item {
      * @returns {boolean}
      */
     use(): boolean;
+    /**
+     *  Get the max value you could buy from this item shop.
+     *  @returns {number}
+     */
+    getMaxBuy(): number;
+    /**
+     *  Use the currencies to buy this shop item and indicates if the shop item
+     *  need to be removed.
+     *  @param {number} shopID The item shop ID
+     *  @param {number} times The number of items to buy
+     *  @returns {boolean}
+     */
+    buy(shopID: number, times: number): boolean;
+    /**
+     *  Get the currencies to sell this item and indicates if the item need to
+     *  be removed from list.
+     *  @param {number} shopID The item shop ID
+     *  @param {number} times The number of items to buy
+     *  @returns {boolean}
+     */
+    sell(times: number): boolean;
 }
 export { Item };

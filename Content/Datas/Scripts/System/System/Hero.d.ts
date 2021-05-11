@@ -1,25 +1,30 @@
-import { Base } from "./Base.js";
 import { Class } from "./Class.js";
+import { System } from "../index.js";
 import { StatisticProgression } from "./StatisticProgression.js";
 import { Skill } from "../Core/index.js";
+import { Translatable } from "./Translatable.js";
 /** @class
  *  An hero of the game.
  *  @extends System.Base
  *  @param {Record<string, any>} - [json=undefined] Json object describing the
  *  hero
  */
-declare class Hero extends Base {
-    name: string;
-    idClass: number;
+declare class Hero extends Translatable {
+    class: System.Class;
     idBattler: number;
     idFaceset: number;
     classInherit: Class;
-    constructor(json: any);
+    constructor(json: Record<string, any>);
     /**
      *  Read the JSON associated to the hero.
      *  @param {Record<string, any>} - json Json object describing the hero
      */
     read(json: Record<string, any>): void;
+    /**
+     *  Check if this hero is a monster.
+     *  @returns {boolean}
+     */
+    isMonster(): boolean;
     /**
      *  Get the property according to class inherit and this hero.
      *  @param {string} prop - The property name
@@ -31,6 +36,11 @@ declare class Hero extends Base {
      *  @returns {Record<string, any>}
      */
     getExperienceTable(): Record<string, any>;
+    /**
+     *  Get the characteristics according to class inherit and this hero.
+     *  @returns {System.Characteristic[]}
+     */
+    getCharacteristics(): System.Characteristic[];
     /**
      *  Get the statistics progression according to class inherit and this hero.
      *  @returns {System.StatisticProgression[]}

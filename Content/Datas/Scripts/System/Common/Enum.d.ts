@@ -18,7 +18,29 @@ declare namespace Enum {
         MoveOppositeHero = 10,
         MoveFront = 11,
         MoveBack = 12,
-        ChangeGraphics = 13
+        ChangeGraphics = 13,
+        Jump = 14,
+        TurnNorth = 15,
+        TurnSouth = 16,
+        TurnWest = 17,
+        TurnEast = 18,
+        Turn90Right = 19,
+        Turn90Left = 20,
+        LookAtHero = 21,
+        LookAtHeroOpposite = 22,
+        ChangeSpeed = 23,
+        ChangeFrequency = 24,
+        MoveAnimation = 25,
+        StopAnimation = 26,
+        ClimbAnimation = 27,
+        FixDirection = 28,
+        Through = 29,
+        SetWithCamera = 30,
+        PixelOffset = 31,
+        KeepPosition = 32,
+        Wait = 33,
+        PlaySound = 34,
+        Script = 35
     }
     /**
      *   Enum for the different event commands kind.
@@ -83,7 +105,16 @@ declare namespace Enum {
         DisplayAnAnimation = 54,
         ShakeScreen = 55,
         FlashScreen = 56,
-        Plugin = 57
+        Plugin = 57,
+        StartShopMenu = 58,
+        RestockShop = 59,
+        EnterANameMenu = 60,
+        CreateObjectInMap = 61,
+        ChangeStatus = 62,
+        ResetCamera = 63,
+        ChangeBattleMusic = 64,
+        ChangeVictoryMusic = 65,
+        EndBattle = 66
     }
     /**
      *   Enum for the different items kind.
@@ -264,7 +295,29 @@ declare namespace Enum {
         CommonReaction = 44,
         Model = 45,
         CustomStructure = 46,
-        CustomList = 47
+        CustomList = 47,
+        Vector2 = 48,
+        Vector3 = 49,
+        Bars = 50,
+        Icons = 51,
+        Autotiles = 52,
+        Characters = 53,
+        Mountains = 54,
+        Tilesets = 55,
+        Walls = 56,
+        Battlers = 57,
+        Facesets = 58,
+        WindowSkins = 59,
+        TitleScreen = 60,
+        Object3D = 61,
+        Pictures = 62,
+        Animations = 63,
+        SkyBoxes = 64,
+        Enum = 65,
+        Music = 66,
+        BackgroundSound = 67,
+        Sound = 68,
+        MusicEffect = 69
     }
     /**
      *   Enum for the different window orientations.
@@ -462,7 +515,8 @@ declare namespace Enum {
      *   @readonly
      */
     enum TitleSettingKind {
-        KeyboardAssigment = 0
+        KeyboardAssigment = 0,
+        Language = 1
     }
     /**
      *   Enum for the object moving.
@@ -588,7 +642,8 @@ declare namespace Enum {
         Selection = 2,
         Animation = 3,
         EnemyAttack = 4,
-        Victory = 5
+        EndTurn = 5,
+        Victory = 6
     }
     /**
      * Enum for the screen transition.
@@ -615,6 +670,47 @@ declare namespace Enum {
         AttackRandomTarget = 5,
         AttackRandomAlly = 6,
         AttackRandomEnemy = 7
+    }
+    /**
+     *  Enum for the inventory filter kind.
+     *
+     *  @export
+     *  @enum {number}
+     */
+    enum InventoryFilterKind {
+        All = 0,
+        Consumables = 1,
+        Custom = 2,
+        Weapons = 3,
+        Armors = 4,
+        WeaponsAndAmors = 5,
+        Script = 6
+    }
+    /**
+     *  Enum for the main menu command kind.
+     *  @export
+     *  @enum {number}
+     */
+    enum MainMenuCommandKind {
+        Inventory = 0,
+        Skills = 1,
+        Equip = 2,
+        States = 3,
+        Order = 4,
+        Save = 5,
+        Quit = 6,
+        Script = 7
+    }
+    /**
+     *  Enum for the troop reaction frequency kind.
+     *  @export
+     *  @enum {number}
+     */
+    enum TroopReactionFrequencyKind {
+        OneTime = 0,
+        EachTurnBegin = 1,
+        EachTurnEnd = 2,
+        Always = 3
     }
 }
 export { Enum };

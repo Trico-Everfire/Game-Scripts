@@ -10,9 +10,9 @@
 */
 
 import { Base } from "./Base";
-import { Graphic, Manager, Datas, Scene } from "../index";
+import { Graphic, Manager, Datas, Scene, System, Core } from "../index";
 import { Mathf } from "../Common";
-import { Battler, Game } from "../Core";
+import { Battler, Game, Player } from "../Core";
 
 /** @class
  *  The graphic displaying a skill or an item use.
@@ -23,8 +23,9 @@ class UseSkillItem extends Base {
     public graphicCharacters: Graphic.Player[];
     public all: boolean;
     public indexArrow: number;
+    public hideArrow: boolean;
 
-    constructor() {
+    constructor({ hideArrow = false }: { hideArrow?: boolean } = {}) {
         super();
 
         this.graphicCharacters = new Array;
@@ -34,7 +35,16 @@ class UseSkillItem extends Base {
             player.initializeCharacter(true);
             this.graphicCharacters.push(player);
         }
+        this.hideArrow = hideArrow;
         this.setAll(false);
+    }
+
+    /** 
+     *  Get the selected player.
+     *  @returns {Core.Player}
+     */
+    getSelectedPlayer(): Player {
+        return this.graphicCharacters[this.indexArrow].player;
     }
 
     /** 
@@ -105,6 +115,26 @@ class UseSkillItem extends Base {
         }
     }
 
+    /** 
+     *  Update stat short.
+     *  @param {number} equipmentID
+     *  @param {System.CommonSkillItem} weaponArmor
+     */
+    updateStatShort(weaponArmor: System.CommonSkillItem) {
+        for (let i = 0, l = this.graphicCharacters.length; i < l; i++) {
+            this.graphicCharacters[i].updateStatShort(weaponArmor);
+        }
+    }
+
+    /** 
+     *  Update stat short to none.
+     */
+    updateStatShortNone() {
+        for (let i = 0, l = this.graphicCharacters.length; i < l; i++) {
+            this.graphicCharacters[i].updateStatShortNone();
+        }
+    }
+    
     /**
      *  Key pressed repeat handle, but with a small wait after the first 
      *  pressure.
@@ -158,12 +188,14 @@ class UseSkillItem extends Base {
             this.graphicCharacters[i].drawCharacter(x + 5 + (i * 85), y - 32, w,
                 h);
         }
-        if (this.all) {
-            for (i = 0; i < l; i++) {
-                this.drawArrowAtIndex(i, x, y, h);
+        if (!this.hideArrow) {
+            if (this.all) {
+                for (i = 0; i < l; i++) {
+                    this.drawArrowAtIndex(i, x, y, h);
+                }
+            } else {
+                this.drawArrowAtIndex(this.indexArrow, x, y, h);
             }
-        } else {
-            this.drawArrowAtIndex(this.indexArrow, x, y, h);
         }
     }
 }

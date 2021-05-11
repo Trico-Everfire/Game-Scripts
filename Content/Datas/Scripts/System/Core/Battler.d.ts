@@ -18,7 +18,6 @@ declare class Battler {
     static OFFSET_SELECTED: number;
     static TIME_MOVE: number;
     static TOTAL_TIME_DAMAGE: number;
-    static STEPS: number;
     player: Player;
     position: Vector3;
     arrowPosition: Vector2;
@@ -59,7 +58,7 @@ declare class Battler {
     currentStatusAnimation: Animation;
     lastStatus: Status;
     lastStatusHealed: Status;
-    constructor(player: Player, position?: Position, camera?: Camera);
+    constructor(player: Player, position?: Position, vect?: Vector3, camera?: Camera);
     /**
      *  Check at least one affected status contains the following restriction.
      *  @param {Enum.StatusRestrictionsKind} restriction - The kind of restriction
@@ -115,7 +114,7 @@ declare class Battler {
     /**
      *  Update the battler.
      */
-    update(): void;
+    update(angle: number): void;
     /**
      *  Update the selected move progress.
      */

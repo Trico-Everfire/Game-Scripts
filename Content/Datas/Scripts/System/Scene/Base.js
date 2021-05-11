@@ -9,7 +9,7 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 import { ReactionInterpreter } from "../Core/index.js";
-import { Scene } from "../index.js";
+import { Scene, Manager } from "../index.js";
 import { Utils } from "../Common/index.js";
 /**
  * The superclass who shape the structure of a scene.
@@ -21,15 +21,20 @@ class Base {
     /**
      * @param {boolean} [loading - = true] tell whether or not the scene is loading asynchronosively.
      */
-    constructor(loading = true) {
+    constructor(loading = true, ...args) {
         this.reactionInterpreters = new Array;
+        this.reactionInterpretersEffects = new Array;
         this.parallelCommands = new Array;
+        this.initialize(...args);
         if (loading) {
             this.loading = true;
             Utils.tryCatch(this.load, this);
         }
         this.create();
     }
+    initialize(...args) {
+    }
+    ;
     /**
      * assign and create all the contents of the scene synchronously.
      *
@@ -55,6 +60,11 @@ class Base {
         this.loading = false;
     }
     /**
+     *  Translate the scene if possible.
+     */
+    translate() {
+    }
+    /**
      * Update all the reaction interpreters from the scenes.
      *
      * @memberof Base
@@ -72,17 +82,21 @@ class Base {
             }
         }
         // Updating all reactions
-        let interpreter;
+        let interpreter, effectIndex;
         for (i = 0, l = this.reactionInterpreters.length; i < l; i++) {
             interpreter = this.reactionInterpreters[i];
             interpreter.update();
             if (interpreter.isFinished()) {
                 interpreter.updateFinish();
                 endingReactions.push(i);
+                effectIndex = this.reactionInterpretersEffects.indexOf(interpreter);
+                if (effectIndex !== -1) {
+                    this.reactionInterpretersEffects.splice(effectIndex, 1);
+                }
             }
             // If changed map, STOP
-            if (!Scene.Map.current || Scene.Map.current.loading) {
-                return;
+            if (!Scene.Map.current || Manager.Stack.top.loading) {
+                break;
             }
         }
         // Deleting finished reactions

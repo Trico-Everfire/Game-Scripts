@@ -18,6 +18,7 @@ interface StructSearchResult {
  */
 declare class MapObject {
     static SPEED_NORMAL: number;
+    id: number;
     system: System.MapObject;
     position: Vector3;
     isHero: boolean;
@@ -52,6 +53,7 @@ declare class MapObject {
     removed: boolean;
     upPosition: Vector3;
     halfPosition: Vector3;
+    currentOrientationStop: boolean;
     constructor(system: System.MapObject, position?: Vector3, isHero?: boolean);
     /**
      *  Search an object in the map.
@@ -140,6 +142,21 @@ declare class MapObject {
      */
     teleport(position: Vector3): void;
     /**
+     *  Jump the object (one step).
+     *  @param {Vector3} start - The start position of the jump
+     *  @param {Vector3} end - The end position of the jump
+     *  @param {number} peak - The y peak
+     *  @param {number} currentTime - The current time for jump animation
+     *  @param {number} finalTime - The total final time for complete jump animation
+     *  @returns {number}
+     */
+    jump(start: Vector3, end: Vector3, peak: number, currentTime: number, finalTime: number): number;
+    /**
+     *  Look a direction.
+     *  @param {Vector3} orientation - The direction to look at.
+     */
+    lookAt(oriention: Orientation): void;
+    /**
      *  Remove datas move temp
      */
     removeMoveTemp(): void;
@@ -173,10 +190,7 @@ declare class MapObject {
      *  @param {number[]} events - The time events list
      *  @returns {boolean}
     */
-    receiveEvent(sender: MapObject, isSystem: boolean, eventID: number, parameters: System.DynamicValue[], states: number[], events?: [
-        System.Event,
-        number
-    ]): boolean;
+    receiveEvent(sender: MapObject, isSystem: boolean, eventID: number, parameters: System.DynamicValue[], states: number[], events?: [System.Event, number]): boolean;
     /**
      *  Update according to camera angle.
      *  @param {number} angle - The camera angle
@@ -213,5 +227,11 @@ declare class MapObject {
      *  @returns {boolean}
      */
     isNone(): boolean;
+    /**
+     *  Get the orientation between two objects.
+     *  @param {Core.MapObject} object
+     *  @returns {Enum.Orientation}
+     */
+    getOrientationBetween(object: MapObject): Enum.Orientation;
 }
 export { StructSearchResult, MapObject };

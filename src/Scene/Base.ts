@@ -10,7 +10,7 @@
 */
 
 import { Camera, Node, ReactionInterpreter, MapObject } from "../Core";
-import { System, Scene } from "../index";
+import { System, Scene, Manager } from "../index";
 import { Utils } from "../Common";
 
 /**
@@ -28,6 +28,14 @@ abstract class Base {
      * @memberof Base
      */
     public reactionInterpreters: ReactionInterpreter[];
+
+    /**
+     * An array of reaction interpreters caused by effects.
+     *
+     * @type {ReactionInterpreter[]}
+     * @memberof Base
+     */
+    public reactionInterpretersEffects: ReactionInterpreter[];
 
     /**
      * the array holding parallel commands.
@@ -56,15 +64,21 @@ abstract class Base {
     /**
      * @param {boolean} [loading - = true] tell whether or not the scene is loading asynchronosively. 
      */
-    constructor(loading: boolean = true) {
+    constructor(loading: boolean = true, ...args: any) {
         this.reactionInterpreters = new Array;
+        this.reactionInterpretersEffects = new Array;
         this.parallelCommands = new Array;
+        this.initialize(...args);
         if (loading) {
             this.loading = true;
             Utils.tryCatch(this.load, this);
         }
         this.create();
     }
+
+    initialize(...args: any) {
+
+    };
 
     /**
      * assign and create all the contents of the scene synchronously.
@@ -91,6 +105,13 @@ abstract class Base {
         this.loading = false;
     }
 
+    /** 
+     *  Translate the scene if possible.
+     */
+    translate() {
+
+    }
+
     /**
      * Update all the reaction interpreters from the scenes. 
      *
@@ -111,17 +132,21 @@ abstract class Base {
         }
 
         // Updating all reactions
-        let interpreter: ReactionInterpreter;
+        let interpreter: ReactionInterpreter, effectIndex: number;
         for (i = 0, l = this.reactionInterpreters.length; i < l; i++) {
             interpreter = this.reactionInterpreters[i];
             interpreter.update();
             if (interpreter.isFinished()) {
                 interpreter.updateFinish();
                 endingReactions.push(i);
+                effectIndex = this.reactionInterpretersEffects.indexOf(interpreter);
+                if (effectIndex !== -1) {
+                    this.reactionInterpretersEffects.splice(effectIndex, 1);
+                }
             }
             // If changed map, STOP
-            if (!Scene.Map.current || Scene.Map.current.loading) {
-                return;
+            if (!Scene.Map.current || Manager.Stack.top.loading) {
+                break;
             }
         }
 

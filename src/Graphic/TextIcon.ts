@@ -40,21 +40,18 @@ class TextIcon extends Base {
     public length: number;
 
     constructor(text: string, iconID: number, { side = Align.Left, align = Align
-        .Left, space = Constants.MEDIUM_SPACE } = {})
+        .Left, space = Constants.MEDIUM_SPACE } = {}, textOptions = {})
     {
         super();
 
-        this.text = text;
         this.iconID = iconID;
         this.side = side;
         this.align = align;
         this.space = space;
         this.graphicIcon = Datas.Pictures.getPictureCopy(PictureKind.Icons, this
             .iconID);
-        this.graphicText = new Graphic.Text(this.text);
-        Platform.ctx.font = this.graphicText.font;
-        this.graphicText.updateContextFont();
-        this.length = Platform.ctx.measureText(this.text).width;
+        this.graphicText = new Graphic.Text("", textOptions);
+        this.setText(text);
     }
 
     /** 
@@ -71,6 +68,20 @@ class TextIcon extends Base {
      */
     getWidth(): number {
         return this.graphicIcon.oW + this.space + this.length;
+    }
+
+    /** 
+     *  Set the text.
+     *  @param {string} text
+     */
+    setText(text: string) {
+        if (this.text !== text) {
+            this.text = text;
+            this.graphicText.setText(text);
+            Platform.ctx.font = this.graphicText.font;
+            this.graphicText.updateContextFont();
+            this.length = Platform.ctx.measureText(this.text).width;
+        }
     }
 
     /** 

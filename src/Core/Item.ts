@@ -23,13 +23,25 @@ import { Game } from "./Game";
 class Item {
 
     public kind: ItemKind;
-    public id: number;
+    public system: System.CommonSkillItem;
     public nb: number;
+    public shop: System.ShopItem;
 
-    constructor(kind: ItemKind, id: number, nb: number) {
+    constructor(kind: ItemKind, id: number, nb: number, shop?: System.ShopItem) {
         this.kind = kind;
-        this.id = id;
+        switch (this.kind) {
+            case ItemKind.Item:
+                this.system = Datas.Items.get(id);
+                break;
+            case ItemKind.Weapon:
+                this.system = Datas.Weapons.get(id);
+                break;
+            case ItemKind.Armor:
+                this.system = Datas.Armors.get(id);
+                break;
+        }
         this.nb = nb;
+        this.shop = shop;
     }
 
     /** 
@@ -43,7 +55,7 @@ class Item {
         let item: Item;
         for (let i = 0, l = Game.current.items.length; i < l; i++) {
             item = Game.current.items[i];
-            if (item.kind === kind && item.id === id) {
+            if (item.kind === kind && item.system.id === id) {
                 return item;
             }
         }
@@ -51,14 +63,27 @@ class Item {
     }
 
     /** 
+     *  The json save.
+     */
+    getSave(): Record<string, any> {
+        return {
+            kind: this.kind,
+            id: this.system.id,
+            nb: this.nb
+        };
+    }
+
+    /** 
      *  Remove item from inventory.
      *  @param {number} nb - Number of item to remove
+     *  @returns {boolean}
      */
-    remove(nb: number) {
+    remove(nb: number): boolean {
         this.nb -= nb;
         if (this.nb <= 0) {
             Game.current.items.splice(Game.current.items.indexOf(
                 this), 1);
+            return true;
         }
     }
 
@@ -74,21 +99,6 @@ class Item {
     }
 
     /** 
-     *  Get the item informations System.
-     *  @returns {System.CommonSkillItem}
-     */
-    getItemInformations(): System.CommonSkillItem {
-        switch (this.kind) {
-            case ItemKind.Item:
-                return Datas.Items.get(this.id);
-            case ItemKind.Weapon:
-                return Datas.Weapons.get(this.id);
-            case ItemKind.Armor:
-                return Datas.Armors.get(this.id);
-        }
-    }
-
-    /** 
      *  Modify items only if already in inventory.
      *  @param {Function} callback - callback function for action
      *  @returns {boolean} Indicates if the item is already inside the
@@ -98,7 +108,7 @@ class Item {
         let item: Item;
         for (let i = 0, l = Game.current.items.length; i < l; i++) {
             item = Game.current.items[i];
-            if (item.kind === this.kind && item.id === this.id) {
+            if (item.kind === this.kind && item.system.id === this.system.id) {
                 // If the item already is in the inventory...
                 callback.call(this, item, i);
                 return true;
@@ -169,6 +179,61 @@ class Item {
      */
     use(): boolean {
         return --this.nb > 0;
+    }
+
+    /** 
+     *  Get the max value you could buy from this item shop.
+     *  @returns {number}
+     */
+    getMaxBuy(): number {
+        return this.shop.getMax(this.nb === -1 ? 9999 : this.nb);
+    }
+
+    /** 
+     *  Use the currencies to buy this shop item and indicates if the shop item 
+     *  need to be removed.
+     *  @param {number} shopID The item shop ID
+     *  @param {number} times The number of items to buy
+     *  @returns {boolean}
+     */
+    buy(shopID: number, times: number): boolean {
+        let price = this.shop.getPrice();
+        // Update currency
+        for (let id in price) {
+            Game.current.currencies[id] -= price[id] * times;
+        }
+        if (this.nb !== - 1) {
+            this.nb -= times;
+        }
+        // Add items to inventory
+        let item = Item.findItem(this.kind, this.system.id);
+        if (item) {
+            item.nb += times;
+        } else {
+            Game.current.items.push(new Item(this.kind, this.system.id, times));
+        }
+        // Change stock value
+        if (Game.current.shops[shopID][this.kind][this.system.id] !== -1) {
+            Game.current.shops[shopID][this.kind][this.system.id] -= times;
+        }
+        return Game.current.shops[shopID][this.kind][this.system.id] === 0;
+    }
+
+    /** 
+     *  Get the currencies to sell this item and indicates if the item need to 
+     *  be removed from list.
+     *  @param {number} shopID The item shop ID
+     *  @param {number} times The number of items to buy
+     *  @returns {boolean}
+     */
+    sell(times: number): boolean {
+        let price = this.system.getPrice();
+        // Update currency
+        for (let id in price) {
+            Game.current.currencies[id] += Math.round(price[id] * Datas.Systems
+                .priceSoldItem.getValue() / 100) * times;
+        }
+        return this.remove(times);
     }
 }
 

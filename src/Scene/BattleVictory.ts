@@ -53,15 +53,15 @@ class BattleVictory {
 
         // If loosing, directly go to end transition
         if (!this.battle.winning) {
-            this.battle.windowTopInformations.content = new Graphic.Text(
-                "Defeat...", { align: Align.Center });
+            (<Graphic.Text>this.battle.windowTopInformations.content).setText(
+                "Defeat...");
             this.battle.subStep = 4;
             return;
         }
 
         // Change information bar content
-        this.battle.windowTopInformations.content = new Graphic.Text("Victory!", 
-            { align: Align.Center });
+        (<Graphic.Text>this.battle.windowTopInformations.content).setText(
+            "Victory!");
 
         // Rewards
         this.prepareRewards();
@@ -89,7 +89,7 @@ class BattleVictory {
         this.battle.priorityIndex = 0;
 
         // Music
-        Datas.BattleSystems.battleVictory.playMusic();
+        Game.current.victoryMusic.playMusic();
 
         // Windows
         let w = 200 + WindowBox.SMALL_PADDING_BOX[0] + WindowBox.SMALL_PADDING_BOX[2];

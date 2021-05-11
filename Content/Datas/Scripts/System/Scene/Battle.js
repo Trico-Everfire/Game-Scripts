@@ -8,8 +8,8 @@
     See RPG Paper Maker EULA here:
         http://rpg-paper-maker.com/index.php/eula.
 */
-import { Camera, Game } from "../Core/index.js";
-import { System, Scene, Manager } from "../index.js";
+import { Camera, Game, Vector3, ReactionInterpreter } from "../Core/index.js";
+import { System, Scene, Manager, Datas } from "../index.js";
 import { Enum } from "../Common/index.js";
 var CharacterKind = Enum.CharacterKind;
 var BattleStep = Enum.BattleStep;
@@ -39,9 +39,10 @@ class Battle extends Map {
         this.battleSelection = new Scene.BattleSelection(this);
         this.battleAnimation = new Scene.BattleAnimation(this);
         this.battleEnemyAttack = new Scene.BattleEnemyAttack(this);
+        this.battleEndTurn = new Scene.BattleEndTurn(this);
         this.battleVictory = new Scene.BattleVictory(this);
         // ====
-        this.troopID = troopID;
+        this.troop = Datas.Troops.get(troopID);
         this.canGameOver = canGameOver;
         this.canEscape = canEscape;
         this.transitionStart = transitionStart;
@@ -51,6 +52,8 @@ class Battle extends Map {
         this.transitionColor = transitionStart === Enum.MapTransitionKind.Fade;
         this.transitionColorAlpha = 0;
         this.step = BattleStep.Initialize;
+        this.indexTroopReaction = 0;
+        this.interpreterTroopReaction = null;
         this.sceneMap = Manager.Stack.top;
         this.mapCameraDistance = this.sceneMap.camera.distance;
         this.actionDoNothing = new System.MonsterAction({});
@@ -219,6 +222,9 @@ class Battle extends Map {
             case BattleStep.EnemyAttack:
                 this.battleEnemyAttack.initialize();
                 break;
+            case BattleStep.EndTurn:
+                this.battleEndTurn.initialize();
+                break;
             case BattleStep.Victory:
                 this.battleVictory.initialize();
                 break;
@@ -229,20 +235,57 @@ class Battle extends Map {
      *  Update battle according to step.
      */
     update() {
+        if (this.forceEndBattle) {
+            this.winning = false;
+            this.changeStep(Enum.BattleStep.Victory);
+            this.forceEndBattle = false;
+        }
         super.update();
+        // Y angle
+        let vector = new Vector3();
+        this.camera.getThreeCamera().getWorldDirection(vector);
+        let angle = Math.atan2(vector.x, vector.z) + (180 * Math.PI / 180.0);
         // Heroes
         let battlers = this.battlers[CharacterKind.Hero];
         let i, l;
         for (i = 0, l = battlers.length; i < l; i++) {
-            battlers[i].update();
+            battlers[i].update(angle);
         }
         // Ennemies
         battlers = this.battlers[CharacterKind.Monster];
         for (i = 0, l = battlers.length; i < l; i++) {
-            battlers[i].update();
+            battlers[i].update(angle);
         }
         // Camera temp code for moving
         this.moveStandardCamera();
+        // Reaction troop always frequency
+        if (this.interpreterTroopReaction === null) {
+            let reaction;
+            for (l = this.troop.reactions.length; this.indexTroopReaction < l; this.indexTroopReaction++) {
+                reaction = this.troop.reactions[this.indexTroopReaction];
+                if (reaction.frequency === Enum.TroopReactionFrequencyKind.Always) {
+                    // Check conditions
+                    if (!reaction.conditions.isValid()) {
+                        continue;
+                    }
+                    this.interpreterTroopReaction = new ReactionInterpreter(null, reaction, null, null);
+                    break;
+                }
+            }
+        }
+        if (this.interpreterTroopReaction) {
+            this.interpreterTroopReaction.update();
+            if (this.interpreterTroopReaction.isFinished()) {
+                this.indexTroopReaction++;
+                this.interpreterTroopReaction = null;
+            }
+        }
+        if (this.indexTroopReaction >= l) {
+            this.indexTroopReaction = 0;
+        }
+        if (this.interpreterTroopReaction) {
+            return;
+        }
         // Update according to step
         switch (this.step) {
             case BattleStep.Initialize:
@@ -259,6 +302,9 @@ class Battle extends Map {
                 break;
             case BattleStep.EnemyAttack:
                 this.battleEnemyAttack.update();
+                break;
+            case BattleStep.EndTurn:
+                this.battleEndTurn.update();
                 break;
             case BattleStep.Victory:
                 this.battleVictory.update();
@@ -329,6 +375,10 @@ class Battle extends Map {
      */
     onKeyPressed(key) {
         super.onKeyPressed(key);
+        if (this.interpreterTroopReaction) {
+            this.interpreterTroopReaction.onKeyPressed(key);
+            return;
+        }
         switch (this.step) {
             case BattleStep.Initialize:
                 this.battleInitialize.onKeyPressedStep(key);
@@ -345,6 +395,9 @@ class Battle extends Map {
             case BattleStep.EnemyAttack:
                 this.battleEnemyAttack.onKeyPressedStep(key);
                 break;
+            case BattleStep.EndTurn:
+                this.battleEndTurn.onKeyPressedStep(key);
+                break;
             case BattleStep.Victory:
                 this.battleVictory.onKeyPressedStep(key);
                 break;
@@ -356,6 +409,10 @@ class Battle extends Map {
      */
     onKeyReleased(key) {
         super.onKeyReleased(key);
+        if (this.interpreterTroopReaction) {
+            this.interpreterTroopReaction.onKeyReleased(key);
+            return;
+        }
         switch (this.step) {
             case BattleStep.Initialize:
                 this.battleInitialize.onKeyReleasedStep(key);
@@ -372,6 +429,9 @@ class Battle extends Map {
             case BattleStep.EnemyAttack:
                 this.battleEnemyAttack.onKeyReleasedStep(key);
                 break;
+            case BattleStep.EndTurn:
+                this.battleEndTurn.onKeyReleasedStep(key);
+                break;
             case BattleStep.Victory:
                 this.battleVictory.onKeyReleasedStep(key);
                 break;
@@ -384,6 +444,9 @@ class Battle extends Map {
      */
     onKeyPressedRepeat(key) {
         let res = super.onKeyPressedRepeat(key);
+        if (this.interpreterTroopReaction) {
+            return res && this.interpreterTroopReaction.onKeyPressedRepeat(key);
+        }
         switch (this.step) {
             case BattleStep.Initialize:
                 res = res && this.battleInitialize.onKeyPressedRepeatStep(key);
@@ -400,6 +463,9 @@ class Battle extends Map {
             case BattleStep.EnemyAttack:
                 res = res && this.battleEnemyAttack.onKeyPressedRepeatStep(key);
                 break;
+            case BattleStep.EndTurn:
+                res = res && this.battleEndTurn.onKeyPressedRepeatStep(key);
+                break;
             case BattleStep.Victory:
                 res = res && this.battleVictory.onKeyPressedRepeatStep(key);
                 break;
@@ -413,6 +479,9 @@ class Battle extends Map {
      */
     onKeyPressedAndRepeat(key) {
         let res = super.onKeyPressedAndRepeat(key);
+        if (this.interpreterTroopReaction) {
+            return res && this.interpreterTroopReaction.onKeyPressedAndRepeat(key);
+        }
         switch (this.step) {
             case BattleStep.Initialize:
                 res = res && this.battleInitialize.onKeyPressedAndRepeatStep(key);
@@ -428,6 +497,9 @@ class Battle extends Map {
                 break;
             case BattleStep.EnemyAttack:
                 res = res && this.battleEnemyAttack.onKeyPressedAndRepeatStep(key);
+                break;
+            case BattleStep.EndTurn:
+                res = res && this.battleEndTurn.onKeyPressedAndRepeatStep(key);
                 break;
             case BattleStep.Victory:
                 res = res && this.battleVictory.onKeyPressedAndRepeatStep(key);
@@ -475,9 +547,15 @@ class Battle extends Map {
             case BattleStep.EnemyAttack:
                 this.battleEnemyAttack.drawHUDStep();
                 break;
+            case BattleStep.EndTurn:
+                this.battleEndTurn.drawHUDStep();
+                break;
             case BattleStep.Victory:
                 this.battleVictory.drawHUDStep();
                 break;
+        }
+        if (this.interpreterTroopReaction) {
+            this.interpreterTroopReaction.drawHUD();
         }
         super.drawHUD();
     }

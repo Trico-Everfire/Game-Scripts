@@ -44,7 +44,8 @@ class State extends Base {
             .Fix);
         this.route = new System.Reaction({
             bh: false,
-            c: [Utils.defaultValue(json.ecr, {
+            c: [
+                Utils.defaultValue(json.ecr, {
                     kind: EventCommandKind.MoveObject,
                     command: [DynamicValueKind.DataBase, -1, 1, 1, 0,
                         CommandMoveKind.MoveRandom, 0]
@@ -77,7 +78,17 @@ class State extends Base {
             graphicKind: this.graphicKind,
             rectTileset: this.rectTileset,
             indexX: this.indexX,
-            indexY: this.indexY
+            indexY: this.indexY,
+            speedID: this.speedID,
+            frequencyID: this.frequencyID,
+            moveAnimation: this.moveAnimation,
+            stopAnimation: this.stopAnimation,
+            climbAnimation: this.climbAnimation,
+            directionFix: this.directionFix,
+            through: this.through,
+            setWithCamera: this.setWithCamera,
+            pixelOffset: this.pixelOffset,
+            keepPosition: this.keepPosition
         };
     }
 }

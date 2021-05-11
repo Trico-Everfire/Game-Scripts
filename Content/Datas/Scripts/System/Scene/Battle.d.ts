@@ -1,4 +1,4 @@
-import { Battler, WindowBox, WindowChoices, Item, Animation } from "../Core/index.js";
+import { Battler, WindowBox, WindowChoices, Item, Animation, Player, ReactionInterpreter } from "../Core/index.js";
 import { Graphic, System, Scene } from "../index.js";
 import { Enum } from "../Common/index.js";
 import CharacterKind = Enum.CharacterKind;
@@ -60,8 +60,9 @@ declare class Battle extends Map {
     battleSelection: Scene.BattleSelection;
     battleAnimation: Scene.BattleAnimation;
     battleEnemyAttack: Scene.BattleEnemyAttack;
+    battleEndTurn: Scene.BattleEndTurn;
     battleVictory: Scene.BattleVictory;
-    troopID: number;
+    troop: System.Troop;
     canGameOver: boolean;
     canEscape: boolean;
     winning: boolean;
@@ -69,6 +70,7 @@ declare class Battle extends Map {
     finishedXP: boolean;
     all: boolean;
     userTarget: boolean;
+    forceEndBattle: boolean;
     kindSelection: CharacterKind;
     selectedUserIndex: number;
     selectedTargetIndex: number;
@@ -79,6 +81,7 @@ declare class Battle extends Map {
     graphicPlayers: Graphic.Player[][];
     graphicRewardTop: Graphic.RewardsTop;
     battlers: Battler[][];
+    players: Player[][];
     time: number;
     timeEnemyAttack: number;
     turn: number;
@@ -102,6 +105,8 @@ declare class Battle extends Map {
     /**What step (initialization, animation, selection, victory) of battle the game is on */
     step: number;
     subStep: number;
+    indexTroopReaction: number;
+    interpreterTroopReaction: ReactionInterpreter;
     mapCameraDistance: number;
     actionDoNothing: System.MonsterAction;
     cameraStep: number;

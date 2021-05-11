@@ -59,6 +59,10 @@ class Systems {
         this.mountainCollisionAngle = System.DynamicValue
             .readOrDefaultNumberDouble(json.mca, 45);
         this.mapFrameDuration = System.DynamicValue.readOrDefaultNumber(json.mfd, 150);
+        this.battlersFrames = Utils.defaultValue(json.battlersFrames, 4);
+        this.battlersColumns = Utils.defaultValue(json.battlersColumns, 9);
+        this.priceSoldItem = System.DynamicValue.readOrDefaultNumberDouble(json
+            .priceSoldItem, 50);
         // Path BR
         this.PATH_BR = Paths.FILES + json.pathBR;
         // Path DLC
@@ -77,6 +81,9 @@ class Systems {
         this.ignoreAssetsLoadingErrors = false; //TODO
         // Lists
         this.itemsTypes = [];
+        this.inventoryFilters = [];
+        this.mainMenuCommands = [];
+        this.heroesStatistics = [];
         this.colors = [];
         this.currencies = [];
         this.windowSkins = [];
@@ -88,8 +95,14 @@ class Systems {
         this.speeds = [];
         this.frequencies = [];
         Utils.readJSONSystemList({ list: json.itemsTypes, listIDs: this
-                .itemsTypes, func: (element) => {
-                return element.name;
+                .itemsTypes, cons: System.Translatable });
+        Utils.readJSONSystemList({ list: json.inventoryFilters, listIndexes: this
+                .inventoryFilters, cons: System.InventoryFilter });
+        Utils.readJSONSystemList({ list: json.mainMenuCommands, listIndexes: this
+                .mainMenuCommands, cons: System.MainMenuCommand });
+        Utils.readJSONSystemList({ list: json.heroesStatistics, listIndexes: this
+                .heroesStatistics, func: (element) => {
+                return System.DynamicValue.readOrDefaultDatabase(element.statisticID);
             } });
         Utils.readJSONSystemList({ list: json.colors, listIDs: this.colors, cons: System.Color });
         Utils.readJSONSystemList({ list: json.currencies, listIDs: this
@@ -103,10 +116,7 @@ class Systems {
         Utils.readJSONSystemList({ list: json.fs, listIDs: this.fontSizes, func: (element) => {
                 return System.DynamicValue.readOrDefaultNumber(element.s, 0);
             } });
-        Utils.readJSONSystemList({ list: json.fn, listIDs: this.fontNames, func: (element) => {
-                return System.DynamicValue.readOrDefaultMessage(element.f, Constants
-                    .DEFAULT_FONT_NAME);
-            } });
+        Utils.readJSONSystemList({ list: json.fn, listIDs: this.fontNames, cons: System.FontName });
         Utils.readJSONSystemList({ list: json.sf, listIDs: this.speeds, func: (element) => {
                 return System.DynamicValue.readOrDefaultNumberDouble(element.v, 1);
             } });
@@ -122,6 +132,8 @@ class Systems {
         this.dbOptions = Manager.Events
             .getEventCommand(json.dbo);
         this.dbOptions.update();
+        // Enter name menu options
+        this.enterNameTable = json.enterNameTable;
         // Initialize loading scene now that basics are loaded
         Manager.Stack.sceneLoading = new Scene.Loading();
         Manager.Stack.requestPaintHUD = true;

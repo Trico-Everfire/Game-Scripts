@@ -51,6 +51,7 @@ class ChangeAStatistic extends Base {
         }
         // Option
         this.canAboveMax = !Utils.numToBool(command[iterator.i++]);
+        this.isApplyToMax = Utils.numToBool(command[iterator.i++]);
     }
     /**
      *  Update and check if the event is finished.
@@ -60,8 +61,11 @@ class ChangeAStatistic extends Base {
      *  @returns {number} The number of node to pass
     */
     update(currentState, object, state) {
-        let stat = Datas.BattleSystems.getStatistic(this.statisticID.getValue());
-        let abr = stat.abbreviation;
+        let statisticID = this.statisticID.getValue();
+        let stat = Datas.BattleSystems.getStatistic(statisticID);
+        let isChangingExperience = Datas.BattleSystems.idExpStatistic === statisticID;
+        let isChangingLevel = Datas.BattleSystems.idLevelStatistic === statisticID;
+        let abr = this.isApplyToMax ? stat.getMaxAbbreviation() : stat.abbreviation;
         let targets;
         switch (this.selection) {
             case 0:
@@ -72,9 +76,10 @@ class ChangeAStatistic extends Base {
                 targets = Game.current.getTeam(this.groupIndex);
                 break;
         }
-        let target;
+        let target, before, after;
         for (let i = 0, l = targets.length; i < l; i++) {
             target = targets[i];
+            before = target[abr];
             switch (this.value) {
                 case 0:
                     target[abr] = Mathf.OPERATORS_NUMBERS[this.operation](target[abr], this.vNumber.getValue());
@@ -91,6 +96,25 @@ class ChangeAStatistic extends Base {
             if (!this.canAboveMax) {
                 target[abr] = Math.max(target[stat.getMaxAbbreviation()], target[abr]);
             }
+            after = target[abr];
+            if (isChangingLevel || isChangingExperience || stat.isFix || this
+                .isApplyToMax) {
+                if (isChangingLevel) {
+                    target[abr] = before;
+                    while (target.getCurrentLevel() < after) {
+                        target.levelUp();
+                    }
+                    target.synchronizeExperience();
+                }
+                else {
+                    target[stat.getAddedAbbreviation()] += after - before;
+                }
+                if (isChangingExperience) {
+                    target.synchronizeLevel();
+                }
+            }
+            // Recalculate stats
+            target.updateAllStatsValues();
         }
         return 1;
     }

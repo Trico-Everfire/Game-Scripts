@@ -106,10 +106,14 @@ class Map extends Base {
         let l = json.length;
         this.allObjects = new Array(l + 1);
         let jsonObject;
+        this.maxObjectsID = 1;
         for (let i = 0; i < l; i++) {
             jsonObject = json[i];
             this.allObjects[jsonObject.id] = Position.createFromArray(jsonObject
                 .p);
+            if (jsonObject.id > this.maxObjectsID) {
+                this.maxObjectsID = jsonObject.id;
+            }
         }
     }
     /**
@@ -122,7 +126,7 @@ class Map extends Base {
         let w = Math.ceil(this.mapProperties.width / Constants.PORTION_SIZE);
         let d = Math.ceil(this.mapProperties.depth / Constants.PORTION_SIZE);
         let h = Math.ceil(this.mapProperties.height / Constants.PORTION_SIZE);
-        var objectsPortions = new Array(l);
+        let objectsPortions = new Array(l);
         let i, j, jp, k, jabs;
         for (i = 0; i < l; i++) {
             objectsPortions[i] = new Array(2);
@@ -340,7 +344,7 @@ class Map extends Base {
      *  @returns {Record<string, any>}
      */
     getObjectsAtPortion(portion) {
-        return Game.current.getPotionsDatas(this.id, portion);
+        return Game.current.getPortionDatas(this.id, portion);
     }
     /**
      *  Get a map portion at local postions.
@@ -609,28 +613,28 @@ class Map extends Base {
         let vector = new Vector3();
         this.camera.getThreeCamera().getWorldDirection(vector);
         let angle = Math.atan2(vector.x, vector.z) + (180 * Math.PI / 180.0);
+        this.mapProperties.startupObject.update();
+        // Update the objects
         if (!this.isBattleMap) {
-            this.mapProperties.startupObject.update();
-            // Update the objects
             Game.current.hero.update(angle);
-            this.updatePortions(this, function (x, y, z, i, j, k) {
-                let objects = Game.current.getPotionsDatas(this.id, new Portion(x, y, z));
-                let movedObjects = objects.min;
-                let p, l;
-                for (p = 0, l = movedObjects.length; p < l; p++) {
-                    movedObjects[p].update(angle);
-                }
-                movedObjects = objects.mout;
-                for (p = 0, l = movedObjects.length; p < l; p++) {
-                    movedObjects[p].update(angle);
-                }
-                // Update face sprites
-                let mapPortion = this.getMapPortion(new Portion(i, j, k));
-                if (mapPortion) {
-                    mapPortion.updateFaceSprites(angle);
-                }
-            });
         }
+        this.updatePortions(this, function (x, y, z, i, j, k) {
+            let objects = Game.current.getPortionDatas(this.id, new Portion(x, y, z));
+            let movedObjects = objects.min;
+            let p, l;
+            for (p = 0, l = movedObjects.length; p < l; p++) {
+                movedObjects[p].update(angle);
+            }
+            movedObjects = objects.mout;
+            for (p = 0, l = movedObjects.length; p < l; p++) {
+                movedObjects[p].update(angle);
+            }
+            // Update face sprites
+            let mapPortion = this.getMapPortion(new Portion(i, j, k));
+            if (mapPortion) {
+                mapPortion.updateFaceSprites(angle);
+            }
+        });
         // Update scene game (interpreters)
         super.update();
     }
@@ -642,9 +646,9 @@ class Map extends Base {
         if (!this.loading) {
             // Send keyPressEvent to all the objects
             if (!ReactionInterpreter.blockingHero && !this.isBattleMap) {
-                Manager.Events.sendEvent(null, 0, 1, true, 3, [null,
-                    System.DynamicValue.createNumber(key), System.DynamicValue
-                        .createSwitch(false), System.DynamicValue.createSwitch(false)], true);
+                Manager.Events.sendEvent(null, 0, 1, true, 3, [null, System
+                        .DynamicValue.createNumber(key), System.DynamicValue
+                        .createSwitch(false), System.DynamicValue.createSwitch(false)], true, false);
             }
             super.onKeyPressed(key);
         }
@@ -657,8 +661,8 @@ class Map extends Base {
         if (!this.loading) {
             // Send keyReleaseEvent to all the objects
             if (!ReactionInterpreter.blockingHero && !this.isBattleMap) {
-                Manager.Events.sendEvent(null, 0, 1, true, 4, [null,
-                    System.DynamicValue.createNumber(key)], true);
+                Manager.Events.sendEvent(null, 0, 1, true, 4, [null, System
+                        .DynamicValue.createNumber(key)], true, false);
             }
             super.onKeyReleased(key);
         }
@@ -671,9 +675,9 @@ class Map extends Base {
     onKeyPressedRepeat(key) {
         if (!this.loading) {
             if (!ReactionInterpreter.blockingHero && !this.isBattleMap) {
-                Manager.Events.sendEvent(null, 0, 1, true, 3, [null,
-                    System.DynamicValue.createNumber(key), System.DynamicValue
-                        .createSwitch(true), System.DynamicValue.createSwitch(true)], true);
+                Manager.Events.sendEvent(null, 0, 1, true, 3, [null, System
+                        .DynamicValue.createNumber(key), System.DynamicValue
+                        .createSwitch(true), System.DynamicValue.createSwitch(true)], true, false);
             }
             return super.onKeyPressedRepeat(key);
         }
@@ -687,10 +691,9 @@ class Map extends Base {
     onKeyPressedAndRepeat(key) {
         if (!this.loading) {
             if (!ReactionInterpreter.blockingHero && !this.isBattleMap) {
-                Manager.Events.sendEvent(null, 0, 1, true, 3, [null,
-                    System.DynamicValue.createNumber(key), System.DynamicValue
-                        .createSwitch(true), System.DynamicValue.createSwitch(false)
-                ], true);
+                Manager.Events.sendEvent(null, 0, 1, true, 3, [null, System
+                        .DynamicValue.createNumber(key), System.DynamicValue
+                        .createSwitch(true), System.DynamicValue.createSwitch(false)], true, false);
             }
             super.onKeyPressedAndRepeat(key);
         }
@@ -715,15 +718,38 @@ class Map extends Base {
         let w = Math.ceil(this.mapProperties.width / Constants.PORTION_SIZE);
         let d = Math.ceil(this.mapProperties.depth / Constants.PORTION_SIZE);
         let h = Math.ceil(this.mapProperties.height / Constants.PORTION_SIZE);
-        let objectsPortions = Game.current.mapsDatas[this.id];
-        let i, j, k, portion;
+        let i, j, k, portion, x;
         for (i = 0; i < l; i++) {
             for (j = -d; j < h; j++) {
                 for (k = 0; k < w; k++) {
-                    portion = objectsPortions[i][j < 0 ? 0 : 1][Math.abs(j)][k];
-                    portion.min = [];
-                    portion.mout = [];
-                    portion.m = [];
+                    portion = Game.current.getPortionPosDatas(this.id, i, j, k);
+                    for (x = portion.min.length - 1; x >= 0; x--) {
+                        if (!portion.min[x].currentState || !portion.min[x]
+                            .currentStateInstance.keepPosition) {
+                            portion.min.splice(x, 1);
+                        }
+                        else {
+                            portion.min[x].removeFromScene();
+                        }
+                    }
+                    for (x = portion.mout.length - 1; x >= 0; x--) {
+                        if (!portion.mout[x].currentState || !portion.mout[x]
+                            .currentStateInstance.keepPosition) {
+                            portion.mout.splice(x, 1);
+                        }
+                        else {
+                            portion.mout[x].removeFromScene();
+                        }
+                    }
+                    for (x = portion.m.length - 1; x >= 0; x--) {
+                        if (!portion.m[x].currentState || !portion.m[x]
+                            .currentStateInstance.keepPosition) {
+                            portion.m.splice(x, 1);
+                        }
+                        else {
+                            portion.m[x].removeFromScene();
+                        }
+                    }
                     portion.r = [];
                 }
             }

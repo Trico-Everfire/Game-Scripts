@@ -10,9 +10,9 @@
 */
 
 import { Graphic, Core, Datas, System, Manager } from "../index";
-import { Picture2D, Frame, Battler } from "../Core";
+import { Picture2D, Frame } from "../Core";
 import { Base } from "./Base";
-import { Utils, Constants, Platform, Enum, ScreenResolution } from "../Common";
+import { Utils, Constants, Platform, Enum } from "../Common";
 import PictureKind = Enum.PictureKind;
 import { Status } from "../Core/Status";
 
@@ -41,29 +41,33 @@ class Player extends Base {
     public battlerFrame: Frame;
     public graphicLevelUp: Graphic.Text;
     public displayNameLevel: boolean;
+    public graphicStatShort: Graphic.Text;
+    public isMainMenu: boolean;
 
-    constructor(player: Core.Player, reverse = false) {
+    constructor(player: Core.Player, { isMainMenu = false, reverse = false }: {
+        isMainMenu?: boolean, reverse?: boolean } = {}) {
         super();
 
         this.player = player;
+        this.isMainMenu = isMainMenu;
         this.reverse = reverse;
 
         // Informations
         let hero = this.player.system;
-        let cl = Datas.Classes.get(hero.idClass);
+        let cl = hero.class;
         let levelStat = Datas.BattleSystems.getLevelStatistic();
         let expStat = Datas.BattleSystems.getExpStatistic();
 
         // All the graphics
         this.graphicName = new Graphic.Text(this.player.name);
         this.graphicClass = new Graphic.Text(cl.name(), { fontSize: 10 });
-        this.graphicLevelName = new Graphic.Text(levelStat.name);
+        this.graphicLevelName = new Graphic.Text(levelStat.name());
         this.graphicLevel = new Graphic.Text(Utils.numToString(this.player[
             levelStat.abbreviation]));
         if (expStat === null) {
             this.graphicExpName = null;
         } else {
-            this.graphicExpName = new Graphic.Text(expStat.name, { fontSize: 
+            this.graphicExpName = new Graphic.Text(expStat.name(), { fontSize: 
                 Constants.MEDIUM_FONT_SIZE });
             this.graphicExp = new Graphic.Text(this.player.getBarAbbreviation
                 (expStat), { fontSize: Constants.MEDIUM_FONT_SIZE });
@@ -74,20 +78,28 @@ class Player extends Base {
         this.listStats = [];
         this.maxStatNamesLength = 0;
         this.maxStatLength = 0;
+        let statistics: number[];
+        let i: number, l: number;
+        if (this.isMainMenu) {
+            l = Datas.Systems.heroesStatistics.length;
+            statistics = new Array(l);
+            for (i = 0; i < l; i++) {
+                statistics[i] = Datas.Systems.heroesStatistics[i].getValue();
+            }
+        } else {
+            statistics = Datas.BattleSystems.statisticsOrder;
+        }
         let id: number, statistic: System.Statistic, graphic: Graphic.Text, c: 
             number, txt: string;
-        for (let i = 0, l = Datas.BattleSystems.statisticsOrder.length; i < l; 
-            i++)
-        {
-            id = Datas.BattleSystems.statisticsOrder[i];
+        for (i = 0, l = statistics.length; i < l; i++) {
+            id = statistics[i];
             if (id !== Datas.BattleSystems.idLevelStatistic && id !== Datas
-                .BattleSystems.idExpStatistic)
-            {
+                .BattleSystems.idExpStatistic) {
                 statistic = Datas.BattleSystems.getStatistic(id);
 
                 // Only display bars
                 if (!statistic.isFix) {
-                    graphic = new Graphic.Text(statistic.name + Constants
+                    graphic = new Graphic.Text(statistic.name() + Constants
                         .STRING_COLON);
                     Platform.ctx.font = graphic.font;
                     graphic.updateContextFont();
@@ -126,7 +138,7 @@ class Player extends Base {
         // Battler
         this.battler = Datas.Pictures.getPictureCopy(PictureKind.Battlers, hero
             .idBattler);
-        this.battlerFrame = new Frame(250);
+        this.battlerFrame = new Frame(250, { frames: Datas.Systems.battlersFrames });
 
         // Level up
         this.graphicLevelUp = new Graphic.Text("Level up!");
@@ -153,25 +165,34 @@ class Player extends Base {
     update() {
         // Informations
         let hero = this.player.system;
-        let cl = Datas.Classes.get(hero.idClass);
+        let cl = hero.class;
         let levelStat = Datas.BattleSystems.getLevelStatistic();
 
         // All the graphics
-        this.graphicName.setText(hero.name);
+        this.graphicName.setText(this.player.name);
         this.graphicClass.setText(cl.name());
-        this.graphicLevelName.setText(levelStat.name);
+        this.graphicLevelName.setText(levelStat.name());
         this.graphicLevel.setText(Utils.numToString(this.player[levelStat
             .abbreviation]));
 
         // Adding stats
+        let statistics: number[];
+        let i: number, l: number;
+        if (this.isMainMenu) {
+            l = Datas.Systems.heroesStatistics.length;
+            statistics = new Array(l);
+            for (i = 0; i < l; i++) {
+                statistics[i] = Datas.Systems.heroesStatistics[i].getValue();
+            }
+        } else {
+            statistics = Datas.BattleSystems.statisticsOrder;
+        }
         let id: number, statistic: System.Statistic, txt: string;
-        for (let i = 0, j = 0, l = Datas.BattleSystems.statisticsOrder.length; i 
-            < l; i++)
+        for (let i = 0, j = 0, l = statistics.length; i < l; i++)
         {
-            id = Datas.BattleSystems.statisticsOrder[i];
+            id = statistics[i];
             if (id !== Datas.BattleSystems.idLevelStatistic && id !== Datas
-                .BattleSystems.idExpStatistic)
-            {
+                .BattleSystems.idExpStatistic) {
                 statistic = Datas.BattleSystems.getStatistic(id);
 
                 // Only display bars
@@ -225,6 +246,29 @@ class Player extends Base {
     }
 
     /** 
+     *  Update stat short.
+     *  @param {number} equipmentID
+     *  @param {System.CommonSkillItem} weaponArmor
+     */
+    updateStatShort(weaponArmor: System.CommonSkillItem) {
+        let totalBonus = this.player.getBestWeaponArmorToReplace(weaponArmor)[0];
+        if (totalBonus > 0) {
+            this.graphicStatShort = new Graphic.Text("^", { color: System.Color.GREEN });
+        } else if (totalBonus < 0) {
+            this.graphicStatShort = new Graphic.Text("ˇ", { color: System.Color.RED });
+        } else {
+            this.graphicStatShort = new Graphic.Text("-", { color: System.Color.GREY });
+        }
+    }
+
+    /** 
+     *  Update stat short to none.
+     */
+    updateStatShortNone() {
+        this.graphicStatShort = null;
+    }
+
+    /** 
      *  Drawing the character.
      *  @param {number} x - The x position to draw graphic
      *  @param {number} y - The y position to draw graphic
@@ -244,14 +288,17 @@ class Player extends Base {
         // Battler
         let yName = y + 100;
         let coef = Constants.BASIC_SQUARE_SIZE / Datas.Systems.SQUARE_SIZE;
-        let wBattler = this.battler.oW / Datas.Systems.FRAMES;
-        let hBattler = this.battler.oH / Battler.STEPS;
+        let wBattler = this.battler.oW / Datas.Systems.battlersFrames;
+        let hBattler = this.battler.oH / Datas.Systems.battlersColumns;
         this.battler.draw(x, yName - (hBattler * coef) - 15, wBattler * coef,
             hBattler * coef, this.battlerFrame.value * wBattler, 0, wBattler, 
             hBattler);
 
         // Stats
         let yStats = yName;
+        if (this.graphicStatShort) {
+            this.graphicStatShort.draw(x, yStats - 15, 0, 0);
+        }
         if (this.displayNameLevel) {
             this.graphicName.draw(x, yName, 0, 0);
             this.graphicLevelName.draw(xLevelName, yName, 0, 0);
@@ -260,10 +307,9 @@ class Player extends Base {
         }
         let yStat: number;
         for (let i = 0, l = this.listStatsNames.length; i < l; i++) {
-            yStat = yStats + (i * 12);
+            yStat = yStats + i * 12;
             this.listStatsNames[i].draw(x, yStat, 0, 0);
-            this.listStats[i].draw(x + this.maxStatNamesLength + 10, yStat, 0, 
-                0);
+            this.listStats[i].draw(x + this.maxStatNamesLength + 10, yStat, 0, 0);
         }
     }
 
@@ -278,8 +324,8 @@ class Player extends Base {
         let xCharacter = x + 80;
         let yName = y + 20;
         let coef = Constants.BASIC_SQUARE_SIZE / Datas.Systems.SQUARE_SIZE;
-        let wBattler = this.battler.oW / Datas.Systems.FRAMES;
-        let hBattler = this.battler.oH / Battler.STEPS;
+        let wBattler = this.battler.oW / Datas.Systems.battlersFrames
+        let hBattler = this.battler.oH / Datas.Systems.battlersColumns;
 
         // Battler
         this.battler.draw(x + (80 - (wBattler * coef)) / 2, y + h - (hBattler *
@@ -301,6 +347,18 @@ class Player extends Base {
             .width;
         if (this.player.status.length > 0) {
             Status.drawList(this.player.status, xStatus, yName);
+        }
+
+        // Right stats
+        if (this.isMainMenu) {
+            let xStat = x + w - 125;
+            let i: number, l: number, yStat: number;
+            for (i = 0, l = this.listStatsNames.length; i < l; i++) {
+                yStat = yName + (i * 20);
+                this.listStatsNames[i].draw(xStat, yStat, 0, 0);
+                this.listStats[i].draw(xStat + this.maxStatNamesLength + 10, 
+                    yStat, 0, 0);
+            }
         }
 
         // Level up

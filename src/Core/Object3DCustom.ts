@@ -89,7 +89,7 @@ class Object3DCustom extends Object3D {
             .datas.objID).geometry;
         let vertices = modelGeometry.vertices;
         let uvs = modelGeometry.uvs;
-        let center = modelGeometry.center;
+        let center = modelGeometry.center.clone();
         let scale = this.datas.scale;
         let scaleVec = new Vector3(scale, scale, scale);
         let angleY = position.angleY;
@@ -143,6 +143,7 @@ class Object3DCustom extends Object3D {
             let d = obj.d * scale;
             let minPos = obj.minVertex.clone();
             minPos.multiply(scaleVec);
+            center.multiply(scaleVec);
             objCollision.push({
                 p: position,
                 l: localPosition,

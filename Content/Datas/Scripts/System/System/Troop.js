@@ -8,6 +8,8 @@
     See RPG Paper Maker EULA here:
         http://rpg-paper-maker.com/index.php/eula.
 */
+import { System } from "../index.js";
+import { Utils } from "../Common/index.js";
 import { Base } from "./Base.js";
 /** @class
  *  A troop of the game.
@@ -24,7 +26,7 @@ class Troop extends Base {
      *  @param {Record<string, any>} - json Json object describing the troop
      */
     read(json) {
-        let jsonList = json.l;
+        let jsonList = Utils.defaultValue(json.l, []);
         let l = jsonList.length;
         this.list = new Array(l);
         let jsonElement;
@@ -35,6 +37,9 @@ class Troop extends Base {
                 level: jsonElement.l
             };
         }
+        this.reactions = [];
+        Utils.readJSONSystemList({ list: Utils.defaultValue(json.reactions, []),
+            listIndexes: this.reactions, cons: System.TroopReaction });
     }
 }
 export { Troop };

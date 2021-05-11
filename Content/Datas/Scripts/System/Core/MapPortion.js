@@ -484,10 +484,12 @@ class MapPortion {
         // Add moved objects to the scene
         let objects = datas.min;
         for (i = 0, l = objects.length; i < l; i++) {
+            objects[i].changeState();
             objects[i].addToScene();
         }
         objects = datas.mout;
         for (i = 0, l = objects.length; i < l; i++) {
+            objects[i].changeState();
             objects[i].addToScene();
         }
     }
@@ -525,7 +527,7 @@ class MapPortion {
             this.objectsList[i].removeFromScene();
         }
         // Remove moved objects from the scene
-        let datas = Game.current.getPotionsDatas(Scene.Map.current.id, this.portion);
+        let datas = Game.current.getPortionDatas(Scene.Map.current.id, this.portion);
         let objects = datas.min;
         for (i = 0, l = objects.length; i < l; i++) {
             objects[i].removeFromScene();
@@ -581,7 +583,7 @@ class MapPortion {
                 return new MapObject(object, position.toVector3(), true);
             }
         }
-        return null;
+        throw "Impossible to get the hero. Please delete your hero from the map and define it again.";
     }
     /**
      *  Update the face sprites orientation.

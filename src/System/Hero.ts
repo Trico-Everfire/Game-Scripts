@@ -9,13 +9,12 @@
         http://rpg-paper-maker.com/index.php/eula.
 */
 
-import { Base } from "./Base";
 import { Class } from "./Class";
 import { Utils } from "../Common";
-import { Datas } from "../index";
+import { Datas, System } from "../index";
 import { StatisticProgression } from "./StatisticProgression";
-import { ClassSkill } from "./ClassSkill";
 import { Skill } from "../Core";
+import { Translatable } from "./Translatable";
 
 /** @class
  *  An hero of the game.
@@ -23,15 +22,14 @@ import { Skill } from "../Core";
  *  @param {Record<string, any>} - [json=undefined] Json object describing the 
  *  hero
  */
-class Hero extends Base {
+class Hero extends Translatable {
 
-    name: string;
-    idClass: number;
+    class: System.Class;
     idBattler: number;
     idFaceset: number;
     classInherit: Class;
 
-    constructor(json) {
+    constructor(json: Record<string, any>) {
         super(json);
     }
 
@@ -40,11 +38,21 @@ class Hero extends Base {
      *  @param {Record<string, any>} - json Json object describing the hero
      */
     read(json: Record<string, any>) {
-        this.name = json.names[1];
-        this.idClass = json.class;
+        super.read(json);
+        this.class = Datas.Classes.get(json.class, "Could not find the class in " 
+            + (this.isMonster() ? "monster" : "hero") + " " + Utils.getIDName(
+            json.id, this.name()) + ", please check your Data manager and add a correct class.");
         this.idBattler = Utils.defaultValue(json.bid, -1);
         this.idFaceset = Utils.defaultValue(json.fid, -1);
         this.classInherit = new Class(json.ci);
+    }
+
+    /** 
+     *  Check if this hero is a monster.
+     *  @returns {boolean}
+     */
+    isMonster(): boolean {
+        return this instanceof System.Monster;
     }
 
     /** 
@@ -53,8 +61,7 @@ class Hero extends Base {
      *  @returns {number}
      */
     getProperty(prop: string): any {
-        return Datas.Classes.get(this.idClass).getProperty(prop, this
-            .classInherit);
+        return this.class.getProperty(prop, this.classInherit);
     }
 
     /**
@@ -62,8 +69,15 @@ class Hero extends Base {
      *  @returns {Record<string, any>}
      */
     getExperienceTable(): Record<string, any> {
-        return Datas.Classes.get(this.idClass).getExperienceTable(this
-            .classInherit);
+        return this.class.getExperienceTable(this.classInherit);
+    }
+
+    /** 
+     *  Get the characteristics according to class inherit and this hero.
+     *  @returns {System.Characteristic[]}
+     */
+    getCharacteristics(): System.Characteristic[] {
+        return this.class.getCharacteristics(this.classInherit);
     }
 
     /** 
@@ -71,8 +85,7 @@ class Hero extends Base {
      *  @returns {System.StatisticProgression[]}
      */
     getStatisticsProgression(): StatisticProgression[] {
-        return Datas.Classes.get(this.idClass).getStatisticsProgression(this
-            .classInherit);
+        return this.class.getStatisticsProgression(this.classInherit);
     }
 
     /** 
@@ -81,7 +94,7 @@ class Hero extends Base {
      *  @returns {Skill[]}
      */
     getSkills(level: number): Skill[] {
-        return Datas.Classes.get(this.idClass).getSkills(this.classInherit, level);
+        return this.class.getSkills(this.classInherit, level);
     }
 
     /** 
@@ -91,8 +104,7 @@ class Hero extends Base {
      *  @returns {Skill[]}
      */
     getLearnedSkills(level: number): Skill[] {
-        return Datas.Classes.get(this.idClass).getLearnedSkills(this
-            .classInherit, level);
+        return this.class.getLearnedSkills(this.classInherit, level);
     }
 
     /**  

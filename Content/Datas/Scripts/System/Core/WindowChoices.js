@@ -32,6 +32,7 @@ class WindowChoices extends Bitmap {
             .currentSelectedIndex, -1);
         this.bordersInsideVisible = Utils.defaultValue(options
             .bordersInsideVisible, true);
+        this.bordersVisible = Utils.defaultValue(options.bordersVisible, true);
         // Initialize values
         this.offsetSelectedIndex = 0;
         this.choiceWidth = w;
@@ -47,7 +48,7 @@ class WindowChoices extends Bitmap {
     setX(x) {
         super.setX(x);
         if (this.listContents) {
-            this.updateContentSize(this.currentSelectedIndex);
+            this.updatePosition();
         }
     }
     /**
@@ -57,7 +58,18 @@ class WindowChoices extends Bitmap {
     setY(y) {
         super.setY(y);
         if (this.listContents) {
-            this.updateContentSize(this.currentSelectedIndex);
+            this.updatePosition();
+        }
+    }
+    updatePosition() {
+        let windowBox;
+        for (let i = 0; i < this.listWindows.length; i++) {
+            windowBox = this.listWindows[i];
+            windowBox.setX(this.orientation === OrientationWindow.Horizontal ?
+                this.oX + this.padding[0] + (i * this.choiceWidth) + (i * this
+                    .space) : this.oX + this.padding[0]);
+            windowBox.setY(this.orientation === OrientationWindow.Horizontal ?
+                this.oY : this.oY + (i * this.choiceHeight) + (i * this.space));
         }
     }
     /**
@@ -81,13 +93,14 @@ class WindowChoices extends Bitmap {
      *  @param {number} [currentSelectedIndex=0] - The current selected index
      *  position
      */
-    updateContentSize(currentSelectedIndex = 0) {
+    updateContentSize(currentSelectedIndex = 0, offsetSelectedIndex = 0) {
         // Getting the main box size
         let totalNb = this.listContents.length;
         this.size = totalNb > this.nbItemsMax ? this.nbItemsMax : totalNb;
         let boxWidth, boxHeight;
         if (this.orientation === OrientationWindow.Horizontal) {
-            boxWidth = (this.choiceWidth + this.space) * this.size - this.space;
+            boxWidth = (this.choiceWidth + this.space) * this.size - this.space
+                + (this.bordersInsideVisible ? 0 : this.padding[0] * 3);
             boxHeight = this.choiceHeight;
         }
         else {
@@ -105,19 +118,21 @@ class WindowChoices extends Bitmap {
         let window;
         for (let i = 0; i < totalNb; i++) {
             if (this.orientation === OrientationWindow.Horizontal) {
-                window = new WindowBox(this.oX + (i * this.choiceWidth) + (i *
+                window = new WindowBox(this.oX + this.padding[0] + (i * this.choiceWidth) + (i *
                     this.space), this.oY, this.choiceWidth, this.choiceHeight, {
                     content: this.listContents[i],
-                    padding: this.padding
+                    padding: this.bordersInsideVisible ? this.padding :
+                        WindowBox.NONE_PADDING
                 });
             }
             else {
-                window = new WindowBox(this.oX, this.oY + (i * this.choiceHeight) + (i * this.space), this.choiceWidth, this.choiceHeight, {
+                window = new WindowBox(this.oX, this.oY + (i * this.choiceHeight)
+                    + (i * this.space), this.choiceWidth, this.choiceHeight, {
                     content: this.listContents[i],
                     padding: this.padding
                 });
             }
-            window.bordersVisible = this.bordersInsideVisible;
+            window.bordersVisible = this.bordersInsideVisible && this.bordersVisible;
             this.listWindows[i] = window;
         }
         // Select current selected index if number of choices > 0
@@ -130,7 +145,7 @@ class WindowChoices extends Bitmap {
         else {
             this.currentSelectedIndex = -1;
         }
-        this.offsetSelectedIndex = 0;
+        this.offsetSelectedIndex = offsetSelectedIndex;
         // Update HUD
         Manager.Stack.requestPaintHUD = true;
     }
@@ -201,6 +216,9 @@ class WindowChoices extends Bitmap {
                 i = this.listWindows.length - 1;
                 this.offsetSelectedIndex = this.size - 1;
             }
+            else if (this.listWindows.length <= this.size) {
+                this.offsetSelectedIndex = i;
+            }
             this.currentSelectedIndex = i;
             this.listWindows[this.currentSelectedIndex].selected = true;
             Manager.Stack.requestPaintHUD = true;
@@ -211,6 +229,17 @@ class WindowChoices extends Bitmap {
      */
     selectCurrent() {
         this.select(this.currentSelectedIndex);
+    }
+    /**
+     *  Remove the current choice.
+     */
+    removeCurrent() {
+        this.listContents.splice(this.currentSelectedIndex, 1);
+        if (this.currentSelectedIndex === this.listContents.length) {
+            this.currentSelectedIndex--;
+            this.offsetSelectedIndex--;
+        }
+        this.updateContentSize(this.currentSelectedIndex, this.offsetSelectedIndex);
     }
     /**
      *  Go cursor up.
@@ -320,7 +349,7 @@ class WindowChoices extends Bitmap {
      *  Draw the windows.
      */
     draw() {
-        if (!this.bordersInsideVisible) {
+        if (!this.bordersInsideVisible && this.bordersVisible) {
             this.windowMain.draw();
         }
         let offset = this.currentSelectedIndex === -1 ? -1 : this
@@ -330,6 +359,18 @@ class WindowChoices extends Bitmap {
             index = i + this.currentSelectedIndex - offset;
             this.listWindows[index].draw(true, this.listWindows[i]
                 .windowDimension, this.listWindows[i].contentDimension);
+        }
+        // Draw arrows
+        let ws = Datas.Systems.getCurrentWindowSkin();
+        const arrowWidth = ws.arrowUpDown[2];
+        const arrowHeight = ws.arrowUpDown[3] / 2;
+        const arrowX = this.oX + (this.oW / 2) - (arrowWidth / 2);
+        if (this.currentSelectedIndex - offset > 0) {
+            ws.drawArrowUp(arrowX, this.oY - arrowHeight - 1);
+        }
+        if (this.currentSelectedIndex - offset < this.listWindows.length - this
+            .nbItemsMax) {
+            ws.drawArrowDown(arrowX, this.oY + this.oH + 1);
         }
     }
 }

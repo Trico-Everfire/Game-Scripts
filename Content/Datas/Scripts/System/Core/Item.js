@@ -19,10 +19,21 @@ import { Game } from "./Game.js";
  *  @param {number} nb - The occurence of the item in the inventory
  */
 class Item {
-    constructor(kind, id, nb) {
+    constructor(kind, id, nb, shop) {
         this.kind = kind;
-        this.id = id;
+        switch (this.kind) {
+            case ItemKind.Item:
+                this.system = Datas.Items.get(id);
+                break;
+            case ItemKind.Weapon:
+                this.system = Datas.Weapons.get(id);
+                break;
+            case ItemKind.Armor:
+                this.system = Datas.Armors.get(id);
+                break;
+        }
         this.nb = nb;
+        this.shop = shop;
     }
     /**
      *  Find an item in the inventory.
@@ -35,20 +46,32 @@ class Item {
         let item;
         for (let i = 0, l = Game.current.items.length; i < l; i++) {
             item = Game.current.items[i];
-            if (item.kind === kind && item.id === id) {
+            if (item.kind === kind && item.system.id === id) {
                 return item;
             }
         }
         return null;
     }
     /**
+     *  The json save.
+     */
+    getSave() {
+        return {
+            kind: this.kind,
+            id: this.system.id,
+            nb: this.nb
+        };
+    }
+    /**
      *  Remove item from inventory.
      *  @param {number} nb - Number of item to remove
+     *  @returns {boolean}
      */
     remove(nb) {
         this.nb -= nb;
         if (this.nb <= 0) {
             Game.current.items.splice(Game.current.items.indexOf(this), 1);
+            return true;
         }
     }
     /**
@@ -62,20 +85,6 @@ class Item {
         this.nb += nb;
     }
     /**
-     *  Get the item informations System.
-     *  @returns {System.CommonSkillItem}
-     */
-    getItemInformations() {
-        switch (this.kind) {
-            case ItemKind.Item:
-                return Datas.Items.get(this.id);
-            case ItemKind.Weapon:
-                return Datas.Weapons.get(this.id);
-            case ItemKind.Armor:
-                return Datas.Armors.get(this.id);
-        }
-    }
-    /**
      *  Modify items only if already in inventory.
      *  @param {Function} callback - callback function for action
      *  @returns {boolean} Indicates if the item is already inside the
@@ -85,7 +94,7 @@ class Item {
         let item;
         for (let i = 0, l = Game.current.items.length; i < l; i++) {
             item = Game.current.items[i];
-            if (item.kind === this.kind && item.id === this.id) {
+            if (item.kind === this.kind && item.system.id === this.system.id) {
                 // If the item already is in the inventory...
                 callback.call(this, item, i);
                 return true;
@@ -150,6 +159,59 @@ class Item {
      */
     use() {
         return --this.nb > 0;
+    }
+    /**
+     *  Get the max value you could buy from this item shop.
+     *  @returns {number}
+     */
+    getMaxBuy() {
+        return this.shop.getMax(this.nb === -1 ? 9999 : this.nb);
+    }
+    /**
+     *  Use the currencies to buy this shop item and indicates if the shop item
+     *  need to be removed.
+     *  @param {number} shopID The item shop ID
+     *  @param {number} times The number of items to buy
+     *  @returns {boolean}
+     */
+    buy(shopID, times) {
+        let price = this.shop.getPrice();
+        // Update currency
+        for (let id in price) {
+            Game.current.currencies[id] -= price[id] * times;
+        }
+        if (this.nb !== -1) {
+            this.nb -= times;
+        }
+        // Add items to inventory
+        let item = Item.findItem(this.kind, this.system.id);
+        if (item) {
+            item.nb += times;
+        }
+        else {
+            Game.current.items.push(new Item(this.kind, this.system.id, times));
+        }
+        // Change stock value
+        if (Game.current.shops[shopID][this.kind][this.system.id] !== -1) {
+            Game.current.shops[shopID][this.kind][this.system.id] -= times;
+        }
+        return Game.current.shops[shopID][this.kind][this.system.id] === 0;
+    }
+    /**
+     *  Get the currencies to sell this item and indicates if the item need to
+     *  be removed from list.
+     *  @param {number} shopID The item shop ID
+     *  @param {number} times The number of items to buy
+     *  @returns {boolean}
+     */
+    sell(times) {
+        let price = this.system.getPrice();
+        // Update currency
+        for (let id in price) {
+            Game.current.currencies[id] += Math.round(price[id] * Datas.Systems
+                .priceSoldItem.getValue() / 100) * times;
+        }
+        return this.remove(times);
     }
 }
 export { Item };

@@ -27,7 +27,7 @@ export class Main {
     }
 
     static async initialize() {
-        Datas.Settings.checkIsDevMode();
+        Datas.Settings.checkIsProtected();
         await Manager.Plugins.load();
         Manager.Stack.loadingDelay = 0;
         Manager.Songs.initialize();
@@ -42,6 +42,7 @@ export class Main {
      * @memberof Main
      */
     static async load() {
+        await Datas.Languages.read();
         await Datas.Settings.read();
         await Datas.Systems.read();
         await Datas.Variables.read();

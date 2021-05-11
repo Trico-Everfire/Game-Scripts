@@ -11,13 +11,13 @@
 
 import { Base } from "./Base";
 import { Graphic, Datas, Scene, Manager, System } from "../index";
-import { Enum, ScreenResolution } from "../Common";
+import { Constants, Enum, ScreenResolution } from "../Common";
 import Align = Enum.Align;
 import OrientationWindow = Enum.OrientationWindow;
 import ItemKind = Enum.ItemKind;
 import TargetKind = Enum.TargetKind;
 import AvailableKind = Enum.AvailableKind;
-import { WindowBox, WindowChoices, Item, Game } from "../Core";
+import { WindowBox, WindowChoices, Item, Game, Rectangle } from "../Core";
 import { StructPositionChoice } from "./Menu";
 
 /** @class
@@ -29,7 +29,7 @@ class MenuInventory extends Base {
     public windowTop: WindowBox;
     public windowChoicesTabs: WindowChoices;
     public windowChoicesList: WindowChoices;
-    public windowInformations: WindowBox;
+    public windowBoxInformation: WindowBox;
     public windowEmpty: WindowBox;
     public windowBoxUseItem: WindowBox;
     public positionChoice: StructPositionChoice[];
@@ -39,49 +39,37 @@ class MenuInventory extends Base {
         super(false);
 
         // Initializing the top menu for item kinds
-        let menuKind = [
-            new Graphic.Text("All", { align: Align.Center }),
-            new Graphic.Text("Consumables", { align: Align.Center }),
-            new Graphic.Text(Datas.Systems.getItemType(1), { align: Align.Center }),
-            new Graphic.Text(Datas.Systems.getItemType(2), { align: Align.Center }),
-            new Graphic.Text("Weapons", { align: Align.Center }),
-            new Graphic.Text("Armors", { align: Align.Center })
-        ];
+        let l = Datas.Systems.inventoryFilters.length;
+        let menuKind: Graphic.Text[] = new Array();
+        let i: number;
+        for (i = 0, l = Datas.Systems.inventoryFilters.length; i < l; i++) {
+            menuKind[i] = new Graphic.Text(Datas.Systems.inventoryFilters[i]
+                .name(), { align: Align.Center });
+        }
 
         // All the windows
         this.windowTop = new WindowBox(20, 20, 200, 30, {
                 content: new Graphic.Text("Inventory", { align: Align.Center })
             }
         );
-        this.windowChoicesTabs = new WindowChoices(5, 60, 105, WindowBox
+        this.windowChoicesTabs = new WindowChoices(5, 60, 100, WindowBox
             .SMALL_SLOT_HEIGHT, menuKind, {
                 orientation: OrientationWindow.Horizontal,
                 nbItemsMax: 6
             }
         );
-        this.windowChoicesList = new WindowChoices(20, 100, 200, WindowBox
-            .SMALL_SLOT_HEIGHT, [], {
-                nbItemsMax: Scene.Menu.SLOTS_TO_DISPLAY,
-            }
-        );
-        this.windowInformations = new WindowBox(240, 100, 360, 200, {
-                padding: WindowBox.HUGE_PADDING_BOX
-            }
-        );
+        this.createWindowChoicesList();
+        this.createWindowBoxInformation();
         this.windowEmpty = new WindowBox(10, 100, ScreenResolution.SCREEN_X - 20
             , WindowBox.SMALL_SLOT_HEIGHT, {
                 content: new Graphic.Text("Empty", { align: Align.Center }),
                 padding: WindowBox.SMALL_SLOT_PADDING
             }
         );
-        this.windowBoxUseItem = new WindowBox(240, 320, 360, 140, {
-                content: new Graphic.UseSkillItem(),
-                padding: WindowBox.SMALL_PADDING_BOX
-            }
-        );
-        let l = menuKind.length;
+        this.createWindowBoxUseItem();
+        l = menuKind.length;
         this.positionChoice = new Array(l);
-        for (let i = 0; i < l; i++) {
+        for (i = 0; i < l; i++) {
             this.positionChoice[i] = {
                 index: 0,
                 offset: 0
@@ -94,11 +82,60 @@ class MenuInventory extends Base {
         this.synchronize();
     }
 
+    /**
+     *  Create the choice list.
+     */
+    createWindowChoicesList() {
+        const rect = new Rectangle(Constants.HUGE_SPACE, Constants.HUGE_SPACE + 
+            ((WindowBox.SMALL_SLOT_HEIGHT + Constants.LARGE_SPACE) * 2), WindowBox
+            .LARGE_SLOT_WIDTH, WindowBox.SMALL_SLOT_HEIGHT);
+        const options = {
+            nbItemsMax: Scene.Menu.SLOTS_TO_DISPLAY
+        };
+        this.windowChoicesList = new WindowChoices(rect.x, rect.y, rect.width, 
+            rect.height, [], options);
+    }
+    
+    /**
+     *  Create the information window.
+     */
+    createWindowBoxInformation() {
+        const width = ScreenResolution.SCREEN_X - (Constants.HUGE_SPACE * 2) - 
+            WindowBox.LARGE_SLOT_WIDTH - Constants.LARGE_SPACE;
+        const height = 215;
+        const rect = new Rectangle(ScreenResolution.SCREEN_X - Constants
+            .HUGE_SPACE - width, Constants.HUGE_SPACE + ((WindowBox
+            .SMALL_SLOT_HEIGHT + Constants.LARGE_SPACE) * 2), width, height);
+        const options = { 
+            padding: WindowBox.HUGE_PADDING_BOX
+        };
+        this.windowBoxInformation = new WindowBox(rect.x, rect.y, rect.width, rect
+            .height, options);
+    }
+
+    /**
+     *  Create the user item window.
+     */
+    createWindowBoxUseItem() {
+        const width = this.windowBoxInformation.oW;
+        const height = 140;
+        const rect = new Rectangle(ScreenResolution.SCREEN_X - Constants
+            .HUGE_SPACE - width, this.windowBoxInformation.oY + this
+            .windowBoxInformation.oH + Constants.MEDIUM_SPACE, width, height);
+        const graphic = new Graphic.UseSkillItem();
+        const options = {
+            content: graphic, 
+            padding: WindowBox.SMALL_PADDING_BOX
+        }
+        this.windowBoxUseItem = new WindowBox(rect.x, rect.y, rect.width, rect
+            .height, options);
+    }
+
     /** 
      *  Update informations to display.
      */
     synchronize() {
-        this.windowInformations.content = this.windowChoicesList
+        this.windowBoxInformation.content = this.windowChoicesList
             .getCurrentContent();
     }
 
@@ -109,17 +146,10 @@ class MenuInventory extends Base {
         let indexTab = this.windowChoicesTabs.currentSelectedIndex;
         let nbItems = Game.current.items.length;
         let list = [];
-        let ownedItem: Item, item: System.Item;
+        let ownedItem: Item;
         for (let i = 0; i < nbItems; i++) {
             ownedItem = Game.current.items[i];
-            item = Datas.Items.get(ownedItem.id);
-            if (indexTab === 0 || (indexTab === 1 && (ownedItem.kind === 
-                ItemKind.Item && item.consumable)) || (indexTab === 2 && (
-                ownedItem.kind === ItemKind.Item && item.type === 1)) || (
-                indexTab === 3 && (ownedItem.kind === ItemKind.Item && item.type 
-                === 2)) || (indexTab === 4 && ownedItem.kind === ItemKind.Weapon
-                ) || (indexTab === 5 && ownedItem.kind === ItemKind.Armor))
-            {
+            if (Datas.Systems.inventoryFilters[indexTab].getFilter()(ownedItem)) {
                 list.push(new Graphic.Item(ownedItem));
             }
         }
@@ -134,7 +164,7 @@ class MenuInventory extends Base {
      *  Use the current item.
      */
     useItem() {
-        let graphic = <Graphic.Item> this.windowInformations.content;
+        let graphic = <Graphic.Item> this.windowBoxInformation.content;
         Game.current.useItem(graphic.item);
         if (graphic.item.nb > 0) {
             graphic.updateNb();
@@ -186,20 +216,20 @@ class MenuInventory extends Base {
      */
     onKeyPressed(key: number) {
         Scene.Base.prototype.onKeyPressed.call(Scene.Map.current, key);
-        let graphic = <Graphic.Item> this.windowInformations.content;
+        let graphic = <Graphic.Item> this.windowBoxInformation.content;
         switch (this.substep) {
             case 0:
                 if (Datas.Keyboards.isKeyEqual(key, Datas.Keyboards.menuControls
                     .Action))
                 {
-                    if (this.windowInformations.content === null) {
+                    if (this.windowBoxInformation.content === null) {
                         return;
                     }
-                    let targetKind = graphic.system.targetKind;
-                    let availableKind = graphic.system.availableKind;
-                    if (graphic.system.consumable && (targetKind === TargetKind
-                        .Ally || targetKind === TargetKind.AllAllies) && (
-                        availableKind === AvailableKind.Always || availableKind 
+                    let targetKind = graphic.item.system.targetKind;
+                    let availableKind = graphic.item.system.availableKind;
+                    if (graphic.item.system.consumable && (targetKind === 
+                        TargetKind.Ally || targetKind === TargetKind.AllAllies) && 
+                        (availableKind === AvailableKind.Always || availableKind 
                         === AvailableKind.MainMenu))
                     {
                         Datas.Systems.soundConfirmation.playSound();
@@ -222,7 +252,7 @@ class MenuInventory extends Base {
                 if (Datas.Keyboards.isKeyEqual(key, Datas.Keyboards.menuControls
                     .Action))
                 {
-                    if (graphic.system.isPossible() && graphic.system.use()) {
+                    if (graphic.item.system.isPossible() && graphic.item.system.use()) {
                         this.useItem();
                     }
                 } else if (Datas.Keyboards.isKeyEqual(key, Datas.Keyboards
@@ -286,7 +316,7 @@ class MenuInventory extends Base {
         this.windowChoicesTabs.draw();
         this.windowChoicesList.draw();
         if (this.windowChoicesList.listWindows.length > 0) {
-            this.windowInformations.draw();
+            this.windowBoxInformation.draw();
             if (this.substep === 1) {
                 this.windowBoxUseItem.draw();
             }

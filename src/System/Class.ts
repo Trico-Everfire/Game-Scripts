@@ -10,8 +10,6 @@
 */
 
 import { Translatable } from "./Translatable";
-import { StatisticProgression } from "./StatisticProgression";
-import { ClassSkill } from "./ClassSkill";
 import { Utils } from "../Common";
 import { System } from "..";
 import { Skill } from "../Core";
@@ -34,8 +32,9 @@ class Class extends Translatable {
     public experienceBase: number;
     public experienceInflation: number;
     public experienceTable: Record<string, any>;
-    public statisticsProgression: StatisticProgression[];
-    public skills: ClassSkill[];
+    public characteristics: System.Characteristic[];
+    public statisticsProgression: System.StatisticProgression[];
+    public skills: System.ClassSkill[];
 
     constructor(json?: Record<string, any>) {
         super(json);
@@ -63,14 +62,19 @@ class Class extends Translatable {
         }
 
         // Statistic progression
+        this.characteristics = [];
+        Utils.readJSONSystemList({ list: Utils.defaultValue(json.characteristics, 
+            []), listIndexes: this.characteristics, cons: System.Characteristic });
+
+        // Statistic progression
         this.statisticsProgression = [];
         Utils.readJSONSystemList({ list: Utils.defaultValue(json.stats, []), 
-            listIndexes: this.statisticsProgression, cons: StatisticProgression });
+            listIndexes: this.statisticsProgression, cons: System.StatisticProgression });
 
         // Skills
         this.skills = [];
         Utils.readJSONSystemList({ list: Utils.defaultValue(json.skills, []), 
-            listIndexes: this.skills, cons: ClassSkill });
+            listIndexes: this.skills, cons: System.ClassSkill });
     }
 
     /** 
@@ -101,11 +105,20 @@ class Class extends Translatable {
     }
 
     /** 
+     *  Get the characteristics according to class inherit and this hero.
+     *  @param {System.Class} upClass - The up class
+     *  @returns {System.Characteristic[]}
+     */
+    getCharacteristics(upClass: Class): System.Characteristic[] {
+        return this.characteristics.concat(upClass.characteristics);
+    }
+
+    /** 
      *  Get the statistics progression.
      *  @param {System.Class} upClass - The up class
      *  @returns {System.StatisticProgression[]}
      */
-    getStatisticsProgression(upClass: Class): StatisticProgression[] {
+    getStatisticsProgression(upClass: Class): System.StatisticProgression[] {
         let list = [];
         let i: number, l: number;
         for (i = 0, l = this.statisticsProgression.length; i < l; i++) {
@@ -176,19 +189,23 @@ class Class extends Translatable {
     getSkillsWithoutDuplicate(upClass: Class): System.ClassSkill[] {
         let skills: System.ClassSkill[] = [];
         let i: number, l: number, j: number, m: number, skill: System.ClassSkill, 
-            skillUp: System.ClassSkill;
+            skillUp: System.ClassSkill, test: boolean;
         for (i = 0, l = this.skills.length; i < l; i++) {
             skills.push(this.skills[i]);
         }
-        for (i = 0, l = skills.length; i < l; i++) {
-            skill = skills[i];
-            for (j = 0, m = upClass.skills.length; j < m; j++) {
-                skillUp = upClass.skills[j];
+        for (j = 0, m = upClass.skills.length; j < m; j++) {
+            skillUp = upClass.skills[j];
+            test = true;
+            for (i = 0, l = skills.length; i < l; i++) {
+                skill = skills[i];
                 if (skill.id === skillUp.id) {
                     skills[i] = skillUp;
-                } else {
-                    skills.push(skillUp);
+                    test = false;
+                    break;
                 }
+            }
+            if (test) {
+                skills.push(skillUp);
             }
         }
         return skills;

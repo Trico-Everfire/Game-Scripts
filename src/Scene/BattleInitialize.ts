@@ -48,6 +48,7 @@ class BattleInitialize {
         this.battle.battleCommandKind = EffectSpecialActionKind.None;
         this.battle.targets = [];
         this.battle.battlers = new Array(2);
+        this.battle.players = new Array(2);
         this.battle.graphicPlayers = new Array(2);
         this.battle.time = new Date().getTime();
         this.battle.turn = 1;
@@ -66,6 +67,7 @@ class BattleInitialize {
     initializeAlliesBattlers() {
         let l = Game.current.teamHeroes.length;
         this.battle.battlers[CharacterKind.Hero] = new Array(l);
+        this.battle.players[CharacterKind.Hero] = new Array(l);
         this.battle.graphicPlayers[CharacterKind.Hero] = new Array(l);
         let position: Vector3, player: Player, battler: Battler;
         for (let i = 0; i < l; i++) {
@@ -76,12 +78,13 @@ class BattleInitialize {
                 .heroBattle.position.z - Datas.Systems.SQUARE_SIZE + (i * Datas
                 .Systems.SQUARE_SIZE));
             player = Game.current.teamHeroes[i];
-            battler = new Battler(player, Position.createFromVector3(position), 
-                this.battle.camera);
+            battler = new Battler(player, Position.createFromVector3(position),
+                position, this.battle.camera);
             battler.updateDead(false);
             player.battler = battler;
             battler.addToScene();
             this.battle.battlers[CharacterKind.Hero][i] = battler;
+            this.battle.players[CharacterKind.Hero][i] = player;
 
             // Graphic player
             this.battle.graphicPlayers[CharacterKind.Hero][i] = new Graphic
@@ -93,15 +96,15 @@ class BattleInitialize {
      *  Initialize enemies battlers.
      */
     initializeEnemiesBattlers() {
-        let troop = Datas.Troops.get(this.battle.troopID);
-        let l = troop.list.length;
+        let l = this.battle.troop.list.length;
         this.battle.battlers[CharacterKind.Monster] = new Array(l);
+        this.battle.players[CharacterKind.Monster] = new Array(l);
         this.battle.graphicPlayers[CharacterKind.Monster] = new Array(l);
         let troopElement: StructTroopElement, position: Vector3, player: Player,
             battler: Battler;
         for (let i = 0; i < l; i++) {
             // Battlers
-            troopElement = troop.list[i];
+            troopElement = this.battle.troop.list[i];
             position = new Vector3(Game.current.heroBattle.position.x - (2
                 * Datas.Systems.SQUARE_SIZE) - (i * Datas.Systems.SQUARE_SIZE * 
                 3 / 4), Game.current.heroBattle.position.y, Game.current
@@ -111,14 +114,15 @@ class BattleInitialize {
                 .current.charactersInstances++, [], []);
             player.instanciate(troopElement.level);
             battler = new Battler(player, Position.createFromVector3(position), 
-                this.battle.camera);
+                position, this.battle.camera);
             player.battler = battler;
             battler.addToScene();
             this.battle.battlers[CharacterKind.Monster][i] = battler;
+            this.battle.players[CharacterKind.Monster][i] = player;
 
             // Graphic player
             this.battle.graphicPlayers[CharacterKind.Monster][i] = new Graphic
-                .Player(player, true);
+                .Player(player, { reverse: true });
         
         }
     }
@@ -130,7 +134,8 @@ class BattleInitialize {
         this.battle.windowTopInformations = new WindowBox(0, Constants
             .HUGE_SPACE, ScreenResolution.SCREEN_X, WindowBox.SMALL_SLOT_HEIGHT,
             {
-                padding: WindowBox.SMALL_SLOT_PADDING
+                padding: WindowBox.SMALL_SLOT_PADDING,
+                content: new Graphic.Text("", { align: Enum.Align.Center })
             }
         );
         this.battle.windowUserInformations = new WindowBox(ScreenResolution
@@ -233,7 +238,7 @@ class BattleInitialize {
         let song = Manager.Songs.current[SongKind.Music];
         this.battle.musicMapTime = song === null ? 0 : song.seek() / Constants
             .ONE_SECOND_MILLI;
-        Datas.BattleSystems.battleMusic.playMusic();
+        Game.current.battleMusic.playMusic();
     }
 
     /** 

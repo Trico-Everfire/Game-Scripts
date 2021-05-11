@@ -29,7 +29,29 @@ namespace Enum {
         MoveOppositeHero,
         MoveFront,
         MoveBack,
-        ChangeGraphics
+        ChangeGraphics,
+        Jump,
+        TurnNorth,
+        TurnSouth,
+        TurnWest,
+        TurnEast,
+        Turn90Right,
+        Turn90Left,
+        LookAtHero,
+        LookAtHeroOpposite,
+        ChangeSpeed,
+        ChangeFrequency,
+        MoveAnimation,
+        StopAnimation,
+        ClimbAnimation,
+        FixDirection,
+        Through,
+        SetWithCamera,
+        PixelOffset,
+        KeepPosition,
+        Wait,
+        PlaySound,
+        Script
     }
 
     /**
@@ -95,7 +117,16 @@ namespace Enum {
         DisplayAnAnimation,
         ShakeScreen,
         FlashScreen,
-        Plugin
+        Plugin,
+        StartShopMenu,
+        RestockShop,
+        EnterANameMenu,
+        CreateObjectInMap,
+        ChangeStatus,
+        ResetCamera,
+        ChangeBattleMusic,
+        ChangeVictoryMusic,
+        EndBattle
     };
 
     /**
@@ -287,7 +318,29 @@ namespace Enum {
         CommonReaction,
         Model,
         CustomStructure,
-        CustomList
+        CustomList,
+        Vector2,
+        Vector3,
+        Bars,
+        Icons,
+        Autotiles,
+        Characters,
+        Mountains,
+        Tilesets,
+        Walls,
+        Battlers,
+        Facesets,
+        WindowSkins,
+        TitleScreen,
+        Object3D,
+        Pictures,
+        Animations,
+        SkyBoxes,
+        Enum,
+        Music,
+        BackgroundSound,
+        Sound,
+        MusicEffect
     };
 
     /**
@@ -502,7 +555,8 @@ namespace Enum {
      *   @readonly
      */
     export enum TitleSettingKind {
-        KeyboardAssigment
+        KeyboardAssigment,
+        Language
     };
 
     /**
@@ -638,6 +692,7 @@ namespace Enum {
         Selection,
         Animation,
         EnemyAttack,
+        EndTurn,
         Victory
     };
 
@@ -667,6 +722,50 @@ namespace Enum {
         AttackRandomTarget,
         AttackRandomAlly,
         AttackRandomEnemy
+    }
+
+    /**
+     *  Enum for the inventory filter kind.
+     *
+     *  @export
+     *  @enum {number}
+     */
+    export enum InventoryFilterKind {
+        All,
+        Consumables,
+        Custom,
+        Weapons,
+        Armors,
+        WeaponsAndAmors,
+        Script
+    }
+
+    /**
+     *  Enum for the main menu command kind.
+     *  @export
+     *  @enum {number}
+     */
+    export enum MainMenuCommandKind {
+        Inventory,
+        Skills,
+        Equip,
+        States,
+        Order,
+        Save,
+        Quit,
+        Script
+    }
+
+    /**
+     *  Enum for the troop reaction frequency kind.
+     *  @export
+     *  @enum {number}
+     */
+    export enum TroopReactionFrequencyKind {
+        OneTime,
+        EachTurnBegin,
+        EachTurnEnd,
+        Always
     }
 }
 

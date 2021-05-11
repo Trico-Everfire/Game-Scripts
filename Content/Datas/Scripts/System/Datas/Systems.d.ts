@@ -18,8 +18,15 @@ declare class Systems {
     static mountainCollisionHeight: System.DynamicValue;
     static mountainCollisionAngle: System.DynamicValue;
     static mapFrameDuration: System.DynamicValue;
+    static battlersFrames: number;
+    static battlersColumns: number;
+    static priceSoldItem: System.DynamicValue;
+    static enterNameTable: string[][];
     static showBB: boolean;
     private static itemsTypes;
+    static inventoryFilters: System.InventoryFilter[];
+    static mainMenuCommands: System.MainMenuCommand[];
+    static heroesStatistics: System.DynamicValue[];
     private static colors;
     private static currencies;
     private static windowSkins;
@@ -49,7 +56,7 @@ declare class Systems {
      *  @param {number} id
      *  @returns {string}
      */
-    static getItemType(id: number): string;
+    static getItemType(id: number): System.Translatable;
     /**
      *  Get the color by ID safely.
      *  @static
@@ -105,7 +112,7 @@ declare class Systems {
      *  @param {number} id
      *  @returns {string}
      */
-    static getFontName(id: number): System.DynamicValue;
+    static getFontName(id: number): System.FontName;
     /**
      *  Get the speed by ID safely.
      *  @static

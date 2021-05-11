@@ -5,6 +5,9 @@ import { StructIterator } from "../EventCommand/index.js";
 interface StructJSON {
     k: DynamicValueKind;
     v: any;
+    x: StructJSON;
+    y: StructJSON;
+    z: StructJSON;
     customStructure?: Record<string, any>;
     customList?: Record<string, any>;
 }
@@ -18,6 +21,9 @@ declare class DynamicValue extends System.Base {
     value: any;
     customStructure: Record<string, System.DynamicValue>;
     customList: System.DynamicValue[];
+    x: System.DynamicValue;
+    y: System.DynamicValue;
+    z: System.DynamicValue;
     constructor(json?: Record<string, any>);
     /**
      *  Create a new value from kind and value.
@@ -98,6 +104,14 @@ declare class DynamicValue extends System.Base {
      */
     static createProperty(id: number): System.DynamicValue;
     /**
+     *  Try to read a variable value, if not possible put default value.
+     *  @static
+     *  @param {StructJSONDynamicValue} json - The json value
+     *  @param {number} [n=0] - The default value
+     *  @returns {System.DynamicValue}
+     */
+    static readOrDefaultVariable(json: StructJSON): System.DynamicValue;
+    /**
      *  Try to read a number value, if not possible put default value.
      *  @static
      *  @param {StructJSONDynamicValue} json - The json value
@@ -130,6 +144,14 @@ declare class DynamicValue extends System.Base {
      */
     static readOrDefaultMessage(json: StructJSON, m?: string): System.DynamicValue;
     /**
+     *  Try to read a switch value, if not possible put default value.
+     *  @static
+     *  @param {StructJSONDynamicValue} json - The json value
+     *  @param {boolean} [s=true] - The default value
+     *  @returns {System.DynamicValue}
+     */
+    static readOrDefaultSwitch(json: StructJSON, s?: boolean): System.DynamicValue;
+    /**
      *  Try to read a value, if not possible put none value.
      *  @static
      *  @param {StructJSONDynamicValue} json - The json value
@@ -152,7 +174,7 @@ declare class DynamicValue extends System.Base {
      *  Get the value
      *  @returns {any}
      */
-    getValue<T>(): any;
+    getValue<T>(forceVariable?: boolean): any;
     /**
      *  Check if a value is equal to another one
      *  @param {System.DynamicValue} value - The value to compare

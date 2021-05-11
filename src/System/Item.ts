@@ -11,6 +11,7 @@
 
 import { CommonSkillItem } from "./CommonSkillItem";
 import { Datas } from "../index";
+import { Enum } from "../Common";
 
 /** @class
  *  An item of the game.
@@ -35,7 +36,15 @@ class Item extends CommonSkillItem {
      *  @returns {string}
      */
     getStringType(): string {
-        return Datas.Systems.getItemType(this.type);
+        return Datas.Systems.getItemType(this.type).name();
+    }
+
+    /** 
+     *  Get the item kind.
+     *  @returns {Enum.ItemKind}
+     */
+    getKind(): Enum.ItemKind {
+        return Enum.ItemKind.Item;
     }
 }
 

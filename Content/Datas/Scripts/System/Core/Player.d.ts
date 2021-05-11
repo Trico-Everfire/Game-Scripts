@@ -48,6 +48,42 @@ declare class Player {
      */
     static getTemporaryPlayer(values?: number[]): Player;
     /**
+     *  Apply callback with all the heroes.
+     *  @param {Player[]} tab - The heroes list
+     *  @param {Function} callback - The callback
+     *  @returns {boolean}
+     */
+    static allTheHeroes(tab: Player[], callback: Function): boolean;
+    /**
+     *  Apply callback with none of the heroes.
+     *  @param {Player[]} tab - The heroes list
+     *  @param {Function} callback - The callback
+     *  @returns {boolean}
+     */
+    static noneOfTheHeroes(tab: Player[], callback: Function): boolean;
+    /**
+     *  Apply callback with at least one hero.
+     *  @param {Player[]} tab - The heroes list
+     *  @param {Function} callback - The callback
+     *  @returns {boolean}
+     */
+    static atLeastOneHero(tab: Player[], callback: Function): boolean;
+    /**
+     *  Apply callback with the hero with instance ID.
+     *  @param {Player[]} tab - The heroes list
+     *  @param {number} id - The hero instance id
+     *  @param {Function} callback - The callback
+     *  @returns {boolean}
+     */
+    static theHeroeWithInstanceID(tab: Player[], id: number, callback: Function): boolean;
+    /**
+     *  Apply callback according to heroes selection.
+     *  @param {Player[]} tab - The heroes list
+     *  @param {Function} callback - The callback
+     *  @returns {boolean}
+    */
+    static applySelection(selectionKind: Enum.ConditionHeroesKind, tab: Player[], instanceID: number, callback: Function): boolean;
+    /**
      *  Get the player informations System.
      *  @returns {System.Hero}
      */
@@ -84,6 +120,13 @@ declare class Player {
      *  @returns {number[][]}
      */
     getEquipmentStatsAndBonus(item?: System.CommonSkillItem, equipmentID?: number): number[][];
+    /**
+     *  Update stats according to charactersitics.
+     *  @param {number[]} characteristics - The characteristics list
+     *  @param {number[]} list - The stats list
+     *  @param {number[]} bonus - The bonus list
+     */
+    updateCharacteristics(characteristics: System.Characteristic[], list: number[], bonus: number[]): void;
     /**
      *  Update stats with equipment stats
      *  @param {number[]} list - The stats list
@@ -176,6 +219,14 @@ declare class Player {
      */
     isExperienceUpdated(): boolean;
     /**
+     *  Synchronize experience if level was manually updated with a command.
+     */
+    synchronizeExperience(): void;
+    /**
+     *  Synchronize level if experience was manually updated with a command.
+     */
+    synchronizeLevel(): void;
+    /**
      *  Get the first status to display according to priority.
      *  @returns {Core.Status[]}
      */
@@ -208,5 +259,11 @@ declare class Player {
      *  Update each status turn.
      */
     updateStatusTurn(): void;
+    /**
+     *  Get the best weapon armor to replace for shops.
+     *  @param {System.CommonSkillItem}
+     *  @returns {[number, number, number[][]]}
+     */
+    getBestWeaponArmorToReplace(weaponArmor: System.CommonSkillItem): [number, number, number[][]];
 }
 export { Player };
